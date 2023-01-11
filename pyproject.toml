@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "expenses-tracker"
+version = "0.1.0"
+description = "Script to register expenses that comes via email to a google docs spreedsheet"
+authors = ["Jairo Leyton <jali1993@hotmail.com>"]
+readme = "README.md"
+packages = [{include = "expenses_tracker"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+google-api-python-client = "^2.71.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.2.0"
+flake8 = "^6.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
