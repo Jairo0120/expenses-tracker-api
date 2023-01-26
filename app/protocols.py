@@ -7,7 +7,7 @@ from models import EmailSubject, Expense
 class EmailReceiver(Protocol):
 
     @abstractmethod
-    def get_unseen_emails(self) -> list[EmailSubject]:
+    def get_unseen_emails(self, inbox_name: str) -> list[EmailSubject]:
         ...
 
     @abstractmethod

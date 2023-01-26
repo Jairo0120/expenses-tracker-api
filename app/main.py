@@ -10,7 +10,7 @@ def run():
         os.getenv('OUTLOOK_USER', ''), os.getenv('OUTLOOK_TOKEN', '')
     )
     email_service.login()
-    emails = email_service.get_unseen_emails()
+    emails = email_service.get_unseen_emails(os.getenv('INBOX_NAME', 'inbox'))
 
 
 run()
