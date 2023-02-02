@@ -2,15 +2,15 @@ from dataclasses import dataclass
 from exceptions import (
     UnableRetrieveEmailsException, UnableRetrieveSubjectException
 )
-from models import EmailSubject, Expense
-from datetime import datetime
+from models import EmailMessage, Expense
+from datetime import datetime, timedelta
 from email.header import decode_header
 import email
 import imaplib
 import logging
 
 
-logging.basicConfig(level = logging.INFO)
+logging.basicConfig(level=logging.INFO)
 
 
 @dataclass
@@ -22,37 +22,47 @@ class OutlookEmail:
         self.server = imaplib.IMAP4_SSL('imap-mail.outlook.com')
         self.server.login(self.email_address, self.token)
 
-    def get_unseen_emails(self, inbox_name: str) -> list[EmailSubject]:
+    def get_unseen_emails(self, inbox_name: str) -> list[EmailMessage]:
         self.server.select(inbox_name, readonly=True)
-        messages: list[EmailSubject] = []
-        status, b_messages = self.server.search(None, 'UnSeen')
+        messages: list[EmailMessage] = []
+        since = (datetime.now() - timedelta(hours=1)).strftime("%d-%b-%Y")
+        status, b_messages = self.server.search(
+            None, f'(UNSEEN SINCE {since})'
+        )
         if status != 'OK':
             raise UnableRetrieveEmailsException
         for message_id in b_messages[0].split():
-            messages.append(EmailSubject(
+            subject, message = self.get_decoded_message(message_id=message_id)
+            messages.append(EmailMessage(
                 id=message_id,
-                subject=self.get_clean_subject(message_id=message_id)
+                message=message,
+                subject=subject
             ))
         return messages
 
-    def get_clean_subject(self, message_id) -> str:
+    def get_decoded_message(self, message_id) -> tuple:
         status, message = self.server.fetch(message_id, '(RFC822)')
         encoding = 'utf-8'
+        message_text = ''
         if status != 'OK':
             raise UnableRetrieveSubjectException
         try:
-            subject = email.message_from_bytes(message[0][1])['Subject']
+            email_bytes = message[0][1]
+            subject = email.message_from_bytes(email_bytes)['Subject']
             subject_to_decode, encoding = decode_header(subject)[0]
+            message_text = email_bytes.decode('utf-8')
         except Exception as ex:
             logging.error(ex)
-            return f'Unreadable message [{message_id}]'
+            return (f'Unreadable subject message [{message_id}]', '')
         subject_decoded = (
             subject_to_decode
             if type(subject_to_decode) is str
             else subject_to_decode.decode(encoding)
         )
-        logging.info(subject_decoded)
-        return subject_decoded
+        return subject_decoded, message_text
+
+    def get_message_content(self, message_id) -> str:
+        ...
 
     def get_email_content(self, email_id: str) -> str:
         return ''

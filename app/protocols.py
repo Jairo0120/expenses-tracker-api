@@ -1,13 +1,13 @@
 from abc import abstractmethod
 from typing import Protocol
 
-from models import EmailSubject, Expense
+from models import EmailMessage, Expense
 
 
 class EmailReceiver(Protocol):
 
     @abstractmethod
-    def get_unseen_emails(self, inbox_name: str) -> list[EmailSubject]:
+    def get_unseen_emails(self, inbox_name: str) -> list[EmailMessage]:
         ...
 
     @abstractmethod

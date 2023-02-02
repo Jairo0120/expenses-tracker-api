@@ -9,6 +9,13 @@ class EmailSubject:
 
 
 @dataclass
+class EmailMessage:
+    id: str
+    subject: str
+    message: str
+
+
+@dataclass
 class Expense:
     date_expense: datetime
     expense_value: float
