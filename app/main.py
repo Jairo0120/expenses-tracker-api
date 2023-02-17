@@ -1,5 +1,7 @@
 import os
-from outlook_email import OutlookEmail
+import sys
+sys.path.append(os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
+from app.outlook_email import OutlookEmail
 from dotenv import load_dotenv
 
 
@@ -13,4 +15,5 @@ def run():
     emails = email_service.get_unseen_emails(os.getenv('INBOX_NAME', 'inbox'))
 
 
-run()
+if __name__ == '__main__':
+    run()
