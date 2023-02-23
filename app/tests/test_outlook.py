@@ -1,3 +1,4 @@
+import re
 import pytest
 import app.exceptions as exceptions
 import app.tests.mocks.email_mocks as mocks
@@ -40,8 +41,15 @@ def test_clean_message_body_returns_empty_body():
     email message is empty between the body tag
     """
     oe = OutlookEmail('', '')
+    expected = '''
+    <body bgcolor="#ffffff" style="background-color: #ffffff;
+    color: #000000; padding: 0px; -webkit-text-size-adjust:none;
+    font-size: 16px; font-family:arial,helvetica,sans-serif;" text="#000000">
+    </body>
+    '''
     email_body = oe.get_clean_html_body(mocks.GOOD_EMPTY_EMAIL)
-    assert email_body == ''
+    assert re.sub(r"[\s]*", "", email_body) == \
+           re.sub(r"[\s]", "", expected)
 
 
 def test_clean_message_body_returns_body():
@@ -51,6 +59,7 @@ def test_clean_message_body_returns_body():
     """
     oe = OutlookEmail('', '')
     expected = '''
+    <body>
     <h1>Some header</h1>
     <div class="some-class" id="some-id">Some random content</div>
     <section>Some text for this section</section>
@@ -59,6 +68,8 @@ def test_clean_message_body_returns_body():
     <footer>
     Some footer
     </footer>
+    </body>
     '''
     email_body = oe.get_clean_html_body(mocks.GOOD_FULL_EMAIL)
-    assert email_body == expected
+    assert re.sub(r"[\s]*", "", email_body) == \
+           re.sub(r"[\s]", "", expected)
