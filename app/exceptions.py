@@ -4,3 +4,7 @@ class UnableRetrieveEmailsException(Exception):
 
 class UnableRetrieveSubjectException(Exception):
     pass
+
+
+class UnableGetBodyMessageException(Exception):
+    pass
