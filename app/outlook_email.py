@@ -62,7 +62,7 @@ class OutlookEmail:
         )
         return subject_decoded, message_content
 
-    def get_message_body(raw_message: str):
+    def get_clean_html_body(self, raw_message: str) -> str:
         ...
 
     def get_message_content(self, message_id) -> str:
