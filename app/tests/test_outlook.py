@@ -1,6 +1,6 @@
 import pytest
 import app.exceptions as exceptions
-import tests.mocks.email_mocks as mocks
+import app.tests.mocks.email_mocks as mocks
 from app.outlook_email import OutlookEmail
 
 
@@ -12,6 +12,26 @@ def test_clean_message_body_error():
     oe = OutlookEmail('', '')
     with pytest.raises(exceptions.UnableGetBodyMessageException):
         oe.get_clean_html_body(mocks.BAD_EMAIL)
+
+
+def test_clean_message_body_incomplete():
+    """
+    Test that the function raises an error when this doesn't find a good html
+    content inside the email message
+    """
+    oe = OutlookEmail('', '')
+    with pytest.raises(exceptions.UnableGetBodyMessageException):
+        oe.get_clean_html_body(mocks.INCOMPLETE_HTML_EMAIL)
+
+
+def test_clean_message_missing_body():
+    """
+    Test that the function raises an error when this doesn't find a body inside
+    the html content of the email
+    """
+    oe = OutlookEmail('', '')
+    with pytest.raises(exceptions.UnableGetBodyMessageException):
+        oe.get_clean_html_body(mocks.MISSING_HTML_BODY_EMAIL)
 
 
 def test_clean_message_body_returns_empty_body():
