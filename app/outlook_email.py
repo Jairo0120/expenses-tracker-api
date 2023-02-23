@@ -73,8 +73,7 @@ class OutlookEmail:
         body_tag = soup.find('body')
         if not body_tag:
             raise UnableGetBodyMessageException
-        clean_content = body_tag.get_text()
-        return clean_content
+        return str(body_tag)
 
     def get_message_content(self, message_id) -> str:
         ...
