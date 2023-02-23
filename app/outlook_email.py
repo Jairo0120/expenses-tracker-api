@@ -5,6 +5,8 @@ from app.exceptions import (
 from app.models import EmailMessage, Expense
 from datetime import datetime, timedelta
 from email.header import decode_header
+from bs4 import BeautifulSoup
+from app.exceptions import UnableGetBodyMessageException
 import email
 import imaplib
 import logging
@@ -63,7 +65,16 @@ class OutlookEmail:
         return subject_decoded, message_content
 
     def get_clean_html_body(self, raw_message: str) -> str:
-        ...
+        html_index = raw_message.find('<html')
+        if html_index < 0:
+            raise UnableGetBodyMessageException
+        html_content = raw_message[html_index:]
+        soup = BeautifulSoup(html_content, 'html.parser')
+        body_tag = soup.find('body')
+        if not body_tag:
+            raise UnableGetBodyMessageException
+        clean_content = body_tag.get_text()
+        return clean_content
 
     def get_message_content(self, message_id) -> str:
         ...
