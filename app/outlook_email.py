@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from app.exceptions import (
-    UnableRetrieveEmailsException, UnableRetrieveSubjectException
+    UnableRetrieveEmailsException, UnableRetrieveSubjectException,
+    UnableGetExpenseException
 )
 from app.models import EmailMessage, Expense
 from datetime import datetime, timedelta
@@ -28,7 +29,7 @@ class OutlookEmail:
         self.server.select(inbox_name, readonly=True)
         messages: list[EmailMessage] = []
         # TODO: Return just the most recent emails
-        since = (datetime.now() - timedelta(hours=1)).strftime("%d-%b-%Y")
+        since = (datetime.now() - timedelta(weeks=3)).strftime("%d-%b-%Y")
         status, b_messages = self.server.search(
             None, f'(UNSEEN SINCE {since})'
         )
@@ -74,6 +75,30 @@ class OutlookEmail:
         if not body_tag:
             raise UnableGetBodyMessageException
         return str(body_tag)
+
+    def get_itau_cc_expense(self, message_body: str) -> Expense:
+        """
+        Function to return an expense filtering the info from an Itau
+        credit card expense
+        """
+        soup = BeautifulSoup(message_body, 'html.parser')
+        expense = Expense(0, '')
+        tables = soup.find_all('table')
+        if not tables:
+            raise UnableGetExpenseException
+        try:
+            if len(tables) <= 2:
+                raise UnableGetExpenseException
+            expense.description = tables[0].tr.td.get_text()
+            expense.expense_value = tables[1].find_all('tr')[0] \
+                                             .find_all('td')[1] \
+                                             .get_text()
+            expense.date_expense = tables[1].find_all('tr')[1] \
+                                            .find_all('td')[1] \
+                                            .get_text()
+        except AttributeError:
+            raise UnableGetExpenseException
+        return expense
 
     def get_message_content(self, message_id) -> str:
         ...
