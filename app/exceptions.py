@@ -8,3 +8,7 @@ class UnableRetrieveSubjectException(Exception):
 
 class UnableGetBodyMessageException(Exception):
     pass
+
+
+class UnableGetExpenseException(Exception):
+    pass
