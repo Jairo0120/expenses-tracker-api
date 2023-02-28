@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Optional
 
 
 @dataclass
@@ -17,6 +18,6 @@ class EmailMessage:
 
 @dataclass
 class Expense:
-    date_expense: datetime
     expense_value: float
     description: str
+    date_expense: Optional[datetime] = None
