@@ -3,6 +3,7 @@ import pytest
 import app.exceptions as exceptions
 import app.tests.mocks.email_mocks as mocks
 from app.outlook_email import OutlookEmail
+from app.models import Expense
 
 
 def test_clean_message_body_error():
@@ -73,3 +74,14 @@ def test_clean_message_body_returns_body():
     email_body = oe.get_clean_html_body(mocks.GOOD_FULL_EMAIL)
     assert re.sub(r"[\s]*", "", email_body) == \
            re.sub(r"[\s]", "", expected)
+
+
+def test_itau_extracted_expense_wrong_format():
+    """
+    Test that the function raises an exception when the expenses email from
+    Itau doesn't have the right format
+    """
+    oe = OutlookEmail('', '')
+    # expected = Expense(29300, 'DIDI FOOD*DL')
+    with pytest.raises(exceptions.UnableGetExpenseException):
+        oe.get_itau_cc_expense(mocks.ITAU_BAD_TABLE_STRUCTURE)
