@@ -2,7 +2,9 @@ import re
 import pytest
 import app.exceptions as exceptions
 import app.tests.mocks.email_mocks as mocks
-from app.cleaning_functions import get_clean_html_body, get_itau_cc_expense
+from app.cleaning_functions import (
+    get_clean_html_body, get_itau_cc_expense, get_bancolombia_pse_expense
+)
 from app.models import Expense
 from datetime import datetime
 
@@ -108,3 +110,32 @@ def test_itau_expense_extracted_success():
         date_expense=datetime(2023, 2, 14, 18, 25, 12)
     )
     assert expected == get_itau_cc_expense(mocks.ITAU_GOOD_TABLE_STRUCTURE)
+
+
+def test_bancolombia_pse_success():
+    """
+    Test that the function must return a valid expense when the email
+    content has a valid table and data
+    """
+    expected = Expense(
+        expense_value=257455,
+        description='Factura Servicios Publicos',
+        date_expense=datetime(2023, 3, 17, 0, 0, 0)
+    )
+    assert expected == get_bancolombia_pse_expense(mocks.BANCOLOMBIA_PSE_GOOD)
+
+
+def test_bancolombia_pse_incomplete_structure():
+    """
+    Test the function must raise an exception when the email data is incomplete
+    """
+    with pytest.raises(exceptions.UnableGetExpenseException):
+        get_bancolombia_pse_expense(mocks.BANCOLOMBIA_PSE_INCOMPLETE_DATA)
+
+
+def test_bancolombia_rejected_payment():
+    """
+    Test function must return a None value when the transaction is different
+    to Aprobado status
+    """
+    assert None is get_bancolombia_pse_expense(mocks.BANCOLOMBIA_PSE_REJECTED)
