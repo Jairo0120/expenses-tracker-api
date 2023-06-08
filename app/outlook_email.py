@@ -49,9 +49,12 @@ class OutlookEmail:
             raise UnableRetrieveSubjectException
         try:
             email_bytes = message[0][1]
+            for parte in email.message_from_bytes(email_bytes).walk():
+                if parte.get_content_type() == 'text/html':
+                    message_content = parte.get_payload(decode=True)
             subject = email.message_from_bytes(email_bytes)['Subject']
             subject_to_decode, _ = decode_header(subject)[0]
-            message_content = email_bytes.decode('utf-8')
+            message_content = message_content.decode('utf-8')
         except Exception as ex:
             logging.error(ex)
             return (f'Unreadable subject message [{message_id}]', '')
