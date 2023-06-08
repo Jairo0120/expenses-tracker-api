@@ -11,9 +11,9 @@ class EmailReceiver(Protocol):
         ...
 
     @abstractmethod
-    def get_email_content(self, email_id: str) -> str:
+    def get_decoded_message(self, email_id: str) -> str:
         ...
 
     @abstractmethod
-    def get_clean_expense(self, email_content: str) -> Expense:
+    def get_clean_html_body(self, email_content: str) -> Expense:
         ...
