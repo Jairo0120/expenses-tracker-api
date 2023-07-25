@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from app.exceptions import (
     UnableRetrieveEmailsException, UnableRetrieveSubjectException,
 )
-from app.models import EmailMessage, Expense
+from app.models import EmailMessage
 from datetime import datetime, timedelta
 from email.header import decode_header
 import email
@@ -25,8 +25,7 @@ class OutlookEmail:
     def get_unseen_emails(self, inbox_name: str) -> list[EmailMessage]:
         self.server.select(inbox_name, readonly=True)
         messages: list[EmailMessage] = []
-        # TODO: Return just the most recent emails
-        since = (datetime.now() - timedelta(weeks=3)).strftime("%d-%b-%Y")
+        since = (datetime.now() - timedelta(weeks=4)).strftime("%d-%b-%Y")
         status, b_messages = self.server.search(
             None, f'(UNSEEN SINCE {since})'
         )
