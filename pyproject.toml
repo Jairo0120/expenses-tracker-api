@@ -7,15 +7,15 @@ readme = "README.md"
 packages = [{include = "expenses_tracker"}]
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "^3.12"
 google-api-python-client = "^2.71.0"
 python-dotenv = "^0.21.1"
-pytest = "^7.2.1"
-beautifulsoup4 = "^4.11.2"
+pytest = "^7.4.1"
+beautifulsoup4 = "^4.12.2"
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^7.2.0"
-flake8 = "^6.0.0"
+pytest = "^7.4.1"
+flake8 = "^6.1.0"
 
 [build-system]
 requires = ["poetry-core"]
