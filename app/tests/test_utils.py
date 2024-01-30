@@ -1,5 +1,5 @@
-from app.utils import remove_spaces, filter_messages
-from app.models import EmailMessage
+from src.utils import remove_spaces, filter_messages
+from src.models import EmailMessage
 
 
 def test_remove_spaces_success_multiple_spaces():

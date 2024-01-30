@@ -1,9 +1,9 @@
 import re
-from app.exceptions import (
+from src.exceptions import (
     UnableGetExpenseException, UnableGetBodyMessageException
 )
-from app.models import Expense
-from app import utils
+from src.models import Expense
+from src import utils
 from bs4 import BeautifulSoup
 from datetime import datetime
 

@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from typing import Protocol
 
-from models import EmailMessage, Expense
+from src.models import EmailMessage, Expense
 
 
 class EmailReceiver(Protocol):

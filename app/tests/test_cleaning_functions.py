@@ -1,11 +1,11 @@
 import re
 import pytest
-import app.exceptions as exceptions
-import app.tests.mocks.email_mocks as mocks
-from app.cleaning_functions import (
+import src.exceptions as exceptions
+import tests.mocks.email_mocks as mocks
+from src.cleaning_functions import (
     get_clean_html_body, get_itau_cc_expense, get_bancolombia_pse_expense
 )
-from app.models import Expense
+from src.models import Expense
 from datetime import datetime
 
 

@@ -1,8 +1,8 @@
 from dataclasses import dataclass
-from app.exceptions import (
+from src.exceptions import (
     UnableRetrieveEmailsException, UnableRetrieveSubjectException,
 )
-from app.models import EmailMessage
+from src.models import EmailMessage
 from datetime import datetime, timedelta
 from email.header import decode_header
 import email

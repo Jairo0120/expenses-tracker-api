@@ -1,5 +1,5 @@
 import re
-from app.models import EmailMessage
+from src.models import EmailMessage
 
 
 def remove_spaces(str_to_clean: str) -> str:
