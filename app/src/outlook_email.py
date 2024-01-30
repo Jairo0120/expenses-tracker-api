@@ -19,7 +19,7 @@ class OutlookEmail:
     token: str
 
     def login(self):
-        self.server = imaplib.IMAP4_SSL('imap-mail.outlook.com')
+        self.server = imaplib.IMAP4_SSL('outlook.office365.com')
         self.server.login(self.email_address, self.token)
 
     def get_unseen_emails(self, inbox_name: str) -> list[EmailMessage]:
