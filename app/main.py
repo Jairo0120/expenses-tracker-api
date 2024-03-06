@@ -1,28 +1,44 @@
 import os
-from src import utils
-from src.outlook_email import OutlookEmail
-from src.cleaning_functions import get_clean_html_body, get_itau_cc_expense
+import logging
 from dotenv import load_dotenv
+from src import utils
+from src.email_source_mappings import get_all_subjects
+from src.email_providers.outlook_email import OutlookEmail
+from src.cleaning_functions import get_clean_html_body
+from src.target_consumers.expenses_tracker_api import ExpensesTrackerAPI
+from src.email_source_mappings import get_cleaning_function
+from src.models import Expense
+
+
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 
 def main():
     load_dotenv()
     """This should call the email service depending on the config set"""
     email_service = OutlookEmail(
-        os.getenv('OUTLOOK_USER', ''), os.getenv('OUTLOOK_TOKEN', '')
+        os.getenv('OUTLOOK_USER', ''), os.getenv('OUTLOOK_TOKEN', ''),
+        os.getenv('INBOX_NAME', 'inbox')
     )
-    exit(0)
+    logger.info('Login to email service')
     email_service.login()
-    emails = email_service.get_unseen_emails(os.getenv('INBOX_NAME', 'inbox'))
-    emails = utils.filter_messages(
-        emails,
-        os.getenv('INCLUDED_SUBJECTS', '').split(',')
-    )
+    logger.info('Getting unseen emails')
+    emails = email_service.get_unseen_emails()
+    logger.info('Found %s emails', len(emails))
+    emails = utils.filter_messages(emails, get_all_subjects())
+    expenses: list[Expense] = []
+    et_api = ExpensesTrackerAPI()
     for email in emails:
         body = get_clean_html_body(email.message)
-        print(body)
-        print(get_itau_cc_expense(body))
-    pass
+        expense = get_cleaning_function(email.subject)(body)
+        expenses.append(expense)
+    if et_api.add_expense(expenses=expenses):
+        pass
+        # Aquí empear a marcarlos como leídos
+
+    # Enviar bloque al api
+    # Iterar para marcarlos como leídos
 
 
 if __name__ == '__main__':

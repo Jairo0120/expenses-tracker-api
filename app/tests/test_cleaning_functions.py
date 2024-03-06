@@ -5,7 +5,7 @@ import tests.mocks.email_mocks as mocks
 from src.cleaning_functions import (
     get_clean_html_body, get_itau_cc_expense, get_bancolombia_pse_expense
 )
-from src.models import Expense
+from src.models import Expense, ExpenseSource
 from datetime import datetime
 
 
@@ -107,6 +107,7 @@ def test_itau_expense_extracted_success():
         expense_value=29300.21,
         description=('Se realizó una compra en DIDI FOOD*DL desde tu Tarjeta'
                      ' Credito número *****7651 de Itaú:'),
+        expense_source=ExpenseSource.ITAU_CR,
         date_expense=datetime(2023, 2, 14, 18, 25, 12)
     )
     assert expected == get_itau_cc_expense(mocks.ITAU_GOOD_TABLE_STRUCTURE)
@@ -120,6 +121,7 @@ def test_bancolombia_pse_success():
     expected = Expense(
         expense_value=257455,
         description='Factura Servicios Publicos',
+        expense_source=ExpenseSource.BANCOLOMBIA_PSE,
         date_expense=datetime(2023, 3, 17, 0, 0, 0)
     )
     assert expected == get_bancolombia_pse_expense(mocks.BANCOLOMBIA_PSE_GOOD)
@@ -131,11 +133,3 @@ def test_bancolombia_pse_incomplete_structure():
     """
     with pytest.raises(exceptions.UnableGetExpenseException):
         get_bancolombia_pse_expense(mocks.BANCOLOMBIA_PSE_INCOMPLETE_DATA)
-
-
-def test_bancolombia_rejected_payment():
-    """
-    Test function must return a None value when the transaction is different
-    to Aprobado status
-    """
-    assert None is get_bancolombia_pse_expense(mocks.BANCOLOMBIA_PSE_REJECTED)

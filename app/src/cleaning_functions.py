@@ -2,7 +2,7 @@ import re
 from src.exceptions import (
     UnableGetExpenseException, UnableGetBodyMessageException
 )
-from src.models import Expense
+from src.models import Expense, ExpenseSource
 from src import utils
 from bs4 import BeautifulSoup
 from datetime import datetime
@@ -26,7 +26,7 @@ def get_itau_cc_expense(message_body: str) -> Expense:
     credit card expense
     """
     soup = BeautifulSoup(message_body, 'html.parser')
-    expense = Expense(0, '')
+    expense = Expense(0, '', ExpenseSource.ITAU_CR)
     tables = soup.find_all('table')
     expense_value = ''
     expense_description = None
@@ -61,18 +61,20 @@ def get_itau_cc_expense(message_body: str) -> Expense:
     return expense
 
 
-def get_bancolombia_pse_expense(message_body: str) -> Expense | None:
+def get_bancolombia_pse_expense(message_body: str) -> Expense:
     """
     Function to return an expense, cleaning the info from Bancolombia
     pse payments
     """
     soup = BeautifulSoup(message_body, 'html.parser')
     raw_tx_value = soup.find(string=re.compile('Valor de la'))
-    tx_status = clean_string(str(soup.find(string=re.compile('Estado de'))))
+    # No longer use (for now)
+    # tx_status = clean_string(str(soup.find(string=re.compile('Estado de'))))
     tx_value = clean_string(str(raw_tx_value))
     date_tx = clean_string(str(soup.find(string=re.compile('Fecha de'))))
-    if tx_status.split(':')[1][1:].lower() != 'aprobada':
-        return None
+    # No longer use (For now)
+    # if tx_status.split(':')[1][1:].lower() != 'aprobada':
+    #     return None
     try:
         tx_desc = clean_string(
             str(raw_tx_value.previous_element.previous_element)
@@ -87,6 +89,7 @@ def get_bancolombia_pse_expense(message_body: str) -> Expense | None:
         return Expense(
             expense_value=int(tx_value_clean),
             description=tx_desc,
+            expense_source=ExpenseSource.BANCOLOMBIA_PSE,
             date_expense=datetime.strptime(
                 date_tx.split(':')[1][1:], '%d/%m/%Y'
             )

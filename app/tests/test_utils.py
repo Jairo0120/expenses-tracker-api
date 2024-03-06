@@ -28,8 +28,16 @@ def test_filter_messages_no_subjects():
     filtered out
     """
     messages = [
-        EmailMessage(id='1', subject="Hello", message="Body 1"),
-        EmailMessage(id='2', subject="Hi", message="Body 2"),
+        EmailMessage(
+            id='1',
+            subject="Hello",
+            message="Body 1"
+        ),
+        EmailMessage(
+            id='2',
+            subject="Hi",
+            message="Body 2"
+        ),
     ]
     assert filter_messages(messages, []) == []
 
@@ -37,8 +45,16 @@ def test_filter_messages_no_subjects():
 def test_filter_messages_no_matching_subjects():
     """Test when there are no messages with matching subjects"""
     messages = [
-        EmailMessage(id='1', subject="Hello", message="Body 1"),
-        EmailMessage(id='2', subject="Hi", message="Body 2"),
+        EmailMessage(
+            id='1',
+            subject="Hello",
+            message="Body 1"
+        ),
+        EmailMessage(
+            id='2',
+            subject="Hi",
+            message="Body 2"
+        ),
     ]
     included_subjects = ["important", "urgent"]
     assert filter_messages(messages, included_subjects) == []
@@ -47,9 +63,21 @@ def test_filter_messages_no_matching_subjects():
 def test_filter_messages_matching_subjects():
     """Test when there are messages with matching subjects"""
     messages = [
-        EmailMessage(id='1', subject="Hello, urgent!", message="Body 1"),
-        EmailMessage(id='2', subject="Hi, important topic", message="Body 2"),
-        EmailMessage(id='3', subject="General update", message="Body 3"),
+        EmailMessage(
+            id='1',
+            subject="Hello, urgent!",
+            message="Body 1"
+        ),
+        EmailMessage(
+            id='2',
+            subject="Hi, important topic",
+            message="Body 2"
+        ),
+        EmailMessage(
+            id='3',
+            subject="General update",
+            message="Body 3"
+        ),
     ]
     included_subjects = ["important", "urgent"]
     filtered_messages = filter_messages(messages, included_subjects)
@@ -62,9 +90,21 @@ def test_filter_messages_matching_subjects():
 def test_filter_messages_matching_subjects_case_insensitive():
     """Test when included_subjects contain uppercase characters"""
     messages = [
-        EmailMessage(id='1', subject="Hello, urgent!", message="Body 1"),
-        EmailMessage(id='2', subject="Hi, important topic", message="Body 2"),
-        EmailMessage(id='3', subject="General update", message="Body 3"),
+        EmailMessage(
+            id='1',
+            subject="Hello, urgent!",
+            message="Body 1"
+        ),
+        EmailMessage(
+            id='2',
+            subject="Hi, important topic",
+            message="Body 2"
+        ),
+        EmailMessage(
+            id='3',
+            subject="General update",
+            message="Body 3"
+        ),
     ]
     included_subjects = ["Important", "uRgEnt"]
     filtered_messages = filter_messages(messages, included_subjects)

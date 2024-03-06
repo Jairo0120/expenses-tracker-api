@@ -12,3 +12,11 @@ class UnableGetBodyMessageException(Exception):
 
 class UnableGetExpenseException(Exception):
     pass
+
+
+class EmailSourceException(Exception):
+    pass
+
+
+class CleaningFunctionNotImplementedException(Exception):
+    pass
