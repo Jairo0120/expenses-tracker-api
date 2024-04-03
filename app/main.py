@@ -34,11 +34,8 @@ def main():
         expense = get_cleaning_function(email.subject)(body)
         expenses.append(expense)
     if et_api.add_expense(expenses=expenses):
+        # Marcar como leídos
         pass
-        # Aquí empear a marcarlos como leídos
-
-    # Enviar bloque al api
-    # Iterar para marcarlos como leídos
 
 
 if __name__ == '__main__':
