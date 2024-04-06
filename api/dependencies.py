@@ -3,7 +3,6 @@ from pathlib import Path
 from jose import JWTError, jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from passlib.context import CryptContext
 from api.models import User
 from sqlmodel import Session, create_engine, select
 from . import config
@@ -12,7 +11,6 @@ from . import config
 oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl='token',
 )
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 @lru_cache
@@ -37,6 +35,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme),
     )
     settings = get_settings()
     try:
+        # python-jose takes care of the validation of the exp date of the token
         payload = jwt.decode(
             token,
             Path(settings.auth0_file_url).read_text(),
@@ -61,5 +60,5 @@ async def get_current_active_user(
     current_user: User = Depends(get_current_user)
 ):
     if not current_user.is_active:
-        raise HTTPException(status_code=400, detail="Inactive user")
+        raise HTTPException(status_code=401, detail="Inactive user")
     return current_user
