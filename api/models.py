@@ -1,6 +1,6 @@
 from sqlmodel import Field, SQLModel, AutoString, Relationship
 from pydantic import EmailStr
-from datetime import datetime
+from datetime import datetime, date
 from enum import Enum
 
 
@@ -31,7 +31,7 @@ class User(UserBase, table=True):
     recurrent_incomes: list["RecurrentIncome"] = Relationship(
         back_populates="user"
     )
-    savings: list["Saving"] = Relationship(back_populates="user")
+    categories: list["Category"] = Relationship(back_populates="user")
     cycles: list["Cycle"] = Relationship(back_populates="user")
 
 
@@ -72,13 +72,15 @@ class RecurrentIncome(SQLModel, table=True):
 class Category(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     description: str
+    user_id: int = Field(foreign_key='user.id')
+    user: User = Relationship(back_populates="categories")
 
 
 class Cycle(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     description: str
-    start_date: datetime
-    end_date: datetime
+    start_date: date
+    end_date: date
     is_active: bool = True
     user_id: int = Field(foreign_key='user.id')
     user: User = Relationship(back_populates="cycles")
