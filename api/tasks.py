@@ -21,6 +21,10 @@ def get_session():
 
 
 def create_cycles():
+    """
+    Function that iterates over all  the active users and start creating new
+    cycles (if necessary) and disable old cycles
+    """
     session = get_session()
     statement = select(User).where(User.is_active == 1)
     for user in session.exec(statement).all():
