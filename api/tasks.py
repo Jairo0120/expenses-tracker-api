@@ -1,5 +1,8 @@
 from api import config
-from api.models import Cycle, User
+from api.models import (
+    Cycle, User, RecurrentIncome, Income, RecurrentExpense, Expense,
+    SourceEnum, RecurrentSaving, Saving
+)
 from sqlmodel import Session, create_engine, select, update
 from datetime import date, datetime
 from api import utils
@@ -51,5 +54,91 @@ def create_cycles():
         session.commit()
 
 
+def create_recurrent_incomes():
+    """
+    Function intended to create all of the recurrent incomes configured
+    in the recurrentIncome table
+    """
+    session = get_session()
+    statement = select(Cycle).where(Cycle.is_recurrent_incomes_created == 0)
+    for cycle in session.exec(statement).all():
+        recurrent_incomes_stmt = (
+            select(RecurrentIncome)
+            .where(RecurrentIncome.enabled == 1)
+            .where(RecurrentIncome.user_id == cycle.user_id)
+        )
+        for re_income in session.exec(recurrent_incomes_stmt):
+            income = Income(
+                description=re_income.description,
+                val_income=re_income.val_income,
+                date_income=datetime.now(),
+                is_recurrent_income=True,
+                cycle_id=cycle.id or 0
+            )
+            session.add(income)
+        cycle.is_recurrent_incomes_created = True
+        session.add(cycle)
+        session.commit()
+
+
+def create_recurrent_expenses():
+    """
+    Function intended to create all of the recurrent expenses configured
+    in the recurrentExpense table
+    """
+    session = get_session()
+    statement = select(Cycle).where(Cycle.is_recurrent_expenses_created == 0)
+    for cycle in session.exec(statement).all():
+        recurrent_expenses_stmt = (
+            select(RecurrentExpense)
+            .where(RecurrentExpense.enabled == 1)
+            .where(RecurrentExpense.user_id == cycle.user_id)
+        )
+        for re_expense in session.exec(recurrent_expenses_stmt):
+            expense = Expense(
+                description=re_expense.description,
+                val_spent=re_expense.val_spent,
+                date_spent=datetime.now(),
+                is_recurrent_expense=True,
+                source=SourceEnum.recurrent,
+                categories=re_expense.categories,
+                cycle_id=cycle.id or 0
+            )
+            session.add(expense)
+        cycle.is_recurrent_expenses_created = True
+        session.add(cycle)
+        session.commit()
+
+
+def create_recurrent_saving():
+    """
+    Function intended to create all of the recurrent savings configured
+    in the recurrentSaving table
+    """
+    session = get_session()
+    statement = select(Cycle).where(Cycle.is_recurrent_saving_created == 0)
+    for cycle in session.exec(statement).all():
+        recurrent_savings_stmt = (
+            select(RecurrentSaving)
+            .where(RecurrentSaving.enabled == 1)
+            .where(RecurrentSaving.user_id == cycle.user_id)
+        )
+        for re_saving in session.exec(recurrent_savings_stmt):
+            saving = Saving(
+                description=re_saving.description,
+                val_saved=re_saving.val_saving,
+                date_saving=datetime.now(),
+                is_recurrent_saving=True,
+                cycle_id=cycle.id or 0
+            )
+            session.add(saving)
+        cycle.is_recurrent_saving_created = True
+        session.add(cycle)
+        session.commit()
+
+
 if __name__ == '__main__':
     create_cycles()
+    create_recurrent_incomes()
+    create_recurrent_expenses()
+    create_recurrent_saving()

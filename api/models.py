@@ -8,6 +8,7 @@ class SourceEnum(str, Enum):
     app = "App"
     email = "Email"
     bot = "Bot"
+    recurrent = "Recurrent"
 
 
 class UserBase(SQLModel):
@@ -56,6 +57,7 @@ class RecurrentExpense(SQLModel, table=True):
     description: str
     val_spent: float
     enabled: bool = True
+    categories: str = ''
     user_id: int = Field(foreign_key='user.id')
     user: User = Relationship(back_populates="recurrent_expenses")
 
@@ -82,6 +84,9 @@ class Cycle(SQLModel, table=True):
     start_date: date
     end_date: date
     is_active: bool = True
+    is_recurrent_incomes_created: bool = False
+    is_recurrent_expenses_created: bool = False
+    is_recurrent_saving_created: bool = False
     user_id: int = Field(foreign_key='user.id')
     user: User = Relationship(back_populates="cycles")
     incomes: list["Income"] = Relationship(back_populates='cycle')
