@@ -11,7 +11,7 @@ from api import utils
 db_session = None
 
 
-def get_session():
+def get_session() -> Session:
     global db_session
     if db_session:
         return db_session
@@ -23,12 +23,11 @@ def get_session():
         return db_session
 
 
-def create_cycles():
+def create_cycles(session: Session):
     """
     Function that iterates over all  the active users and start creating new
     cycles (if necessary) and disable old cycles
     """
-    session = get_session()
     statement = select(User).where(User.is_active == 1)
     for user in session.exec(statement).all():
         current_cycle = session.exec(
@@ -54,12 +53,11 @@ def create_cycles():
         session.commit()
 
 
-def create_recurrent_incomes():
+def create_recurrent_incomes(session: Session):
     """
     Function intended to create all of the recurrent incomes configured
     in the recurrentIncome table
     """
-    session = get_session()
     statement = select(Cycle).where(Cycle.is_recurrent_incomes_created == 0)
     for cycle in session.exec(statement).all():
         recurrent_incomes_stmt = (
@@ -81,12 +79,11 @@ def create_recurrent_incomes():
         session.commit()
 
 
-def create_recurrent_expenses():
+def create_recurrent_expenses(session: Session):
     """
     Function intended to create all of the recurrent expenses configured
     in the recurrentExpense table
     """
-    session = get_session()
     statement = select(Cycle).where(Cycle.is_recurrent_expenses_created == 0)
     for cycle in session.exec(statement).all():
         recurrent_expenses_stmt = (
@@ -110,12 +107,11 @@ def create_recurrent_expenses():
         session.commit()
 
 
-def create_recurrent_saving():
+def create_recurrent_saving(session: Session):
     """
     Function intended to create all of the recurrent savings configured
     in the recurrentSaving table
     """
-    session = get_session()
     statement = select(Cycle).where(Cycle.is_recurrent_saving_created == 0)
     for cycle in session.exec(statement).all():
         recurrent_savings_stmt = (
@@ -138,7 +134,8 @@ def create_recurrent_saving():
 
 
 if __name__ == '__main__':
-    create_cycles()
-    create_recurrent_incomes()
-    create_recurrent_expenses()
-    create_recurrent_saving()
+    session = get_session()
+    create_cycles(session)
+    create_recurrent_incomes(session)
+    create_recurrent_expenses(session)
+    create_recurrent_saving(session)
