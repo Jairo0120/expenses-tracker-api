@@ -11,7 +11,13 @@ class SourceEnum(str, Enum):
     recurrent = "Recurrent"
 
 
-class UserBase(SQLModel):
+class BaseModel(SQLModel):
+    id: int | None = Field(default=None, primary_key=True)
+    created_at: datetime = Field(default=datetime.now(), nullable=False)
+    updated_at: datetime = Field(default_factory=datetime.now, nullable=False)
+
+
+class UserBase(BaseModel):
     email: EmailStr = Field(unique=True, index=True, sa_type=AutoString)
     name: str
     auth0_id: str = Field(unique=True, index=True)
@@ -21,8 +27,6 @@ class UserBase(SQLModel):
 
 
 class User(UserBase, table=True):
-    id: int | None = Field(default=None, primary_key=True)
-
     recurrent_savings: list["RecurrentSaving"] = Relationship(
         back_populates="user"
     )
@@ -40,8 +44,7 @@ class UserCreate(UserBase):
     pass
 
 
-class RecurrentSaving(SQLModel, table=True):
-    id: int | None = Field(default=None, primary_key=True)
+class RecurrentSaving(BaseModel, table=True):
     description: str
     val_saving: float
     enabled: bool = True
@@ -52,8 +55,7 @@ class RecurrentSaving(SQLModel, table=True):
     )
 
 
-class RecurrentExpense(SQLModel, table=True):
-    id: int | None = Field(default=None, primary_key=True)
+class RecurrentExpense(BaseModel, table=True):
     description: str
     val_spent: float
     enabled: bool = True
@@ -62,8 +64,7 @@ class RecurrentExpense(SQLModel, table=True):
     user: User = Relationship(back_populates="recurrent_expenses")
 
 
-class RecurrentIncome(SQLModel, table=True):
-    id: int | None = Field(default=None, primary_key=True)
+class RecurrentIncome(BaseModel, table=True):
     description: str
     val_income: float
     enabled: bool = True
@@ -71,15 +72,13 @@ class RecurrentIncome(SQLModel, table=True):
     user: User = Relationship(back_populates="recurrent_incomes")
 
 
-class Category(SQLModel, table=True):
-    id: int | None = Field(default=None, primary_key=True)
+class Category(BaseModel, table=True):
     description: str
     user_id: int = Field(foreign_key='user.id')
     user: User = Relationship(back_populates="categories")
 
 
-class Cycle(SQLModel, table=True):
-    id: int | None = Field(default=None, primary_key=True)
+class Cycle(BaseModel, table=True):
     description: str
     start_date: date
     end_date: date
@@ -94,8 +93,7 @@ class Cycle(SQLModel, table=True):
     savings: list["Saving"] = Relationship(back_populates='cycle')
 
 
-class Income(SQLModel, table=True):
-    id: int | None = Field(default=None, primary_key=True)
+class Income(BaseModel, table=True):
     description: str
     val_income: float
     date_income: datetime
@@ -104,8 +102,7 @@ class Income(SQLModel, table=True):
     cycle: Cycle = Relationship(back_populates="incomes")
 
 
-class Expense(SQLModel, table=True):
-    id: int | None = Field(default=None, primary_key=True)
+class Expense(BaseModel, table=True):
     description: str
     val_spent: float
     date_spent: datetime
@@ -116,8 +113,7 @@ class Expense(SQLModel, table=True):
     cycle: Cycle = Relationship(back_populates="expenses")
 
 
-class Saving(SQLModel, table=True):
-    id: int | None = Field(default=None, primary_key=True)
+class Saving(BaseModel, table=True):
     description: str
     val_saved: float
     date_saving: datetime
@@ -126,8 +122,7 @@ class Saving(SQLModel, table=True):
     cycle: Cycle = Relationship(back_populates="savings")
 
 
-class SavingOutcome(SQLModel, table=True):
-    id: int | None = Field(default=None, primary_key=True)
+class SavingOutcome(BaseModel, table=True):
     description: str
     val_outcome: float
     date_outcome: datetime
