@@ -58,7 +58,11 @@ def create_recurrent_incomes(session: Session):
     Function intended to create all of the recurrent incomes configured
     in the recurrentIncome table
     """
-    statement = select(Cycle).where(Cycle.is_recurrent_incomes_created == 0)
+    statement = (
+        select(Cycle)
+        .where(Cycle.is_active == 1)
+        .where(Cycle.is_recurrent_incomes_created == 0)
+    )
     for cycle in session.exec(statement).all():
         recurrent_incomes_stmt = (
             select(RecurrentIncome)
@@ -84,7 +88,11 @@ def create_recurrent_expenses(session: Session):
     Function intended to create all of the recurrent expenses configured
     in the recurrentExpense table
     """
-    statement = select(Cycle).where(Cycle.is_recurrent_expenses_created == 0)
+    statement = (
+        select(Cycle)
+        .where(Cycle.is_active == 1)
+        .where(Cycle.is_recurrent_expenses_created == 0)
+    )
     for cycle in session.exec(statement).all():
         recurrent_expenses_stmt = (
             select(RecurrentExpense)
@@ -112,7 +120,11 @@ def create_recurrent_saving(session: Session):
     Function intended to create all of the recurrent savings configured
     in the recurrentSaving table
     """
-    statement = select(Cycle).where(Cycle.is_recurrent_saving_created == 0)
+    statement = (
+        select(Cycle)
+        .where(Cycle.is_active == 1)
+        .where(Cycle.is_recurrent_saving_created == 0)
+    )
     for cycle in session.exec(statement).all():
         recurrent_savings_stmt = (
             select(RecurrentSaving)
