@@ -12,7 +12,7 @@ google-api-python-client = "^2.71.0"
 python-dotenv = "^0.21.1"
 pytest = "^7.4.1"
 beautifulsoup4 = "^4.12.2"
-fastapi = "^0.110.0"
+fastapi = "^0.111.0"
 uvicorn = {version = "^0.27.1 ", extras = ["standard"]}
 sqlmodel = "^0.0.16"
 python-multipart = "^0.0.9"
@@ -21,6 +21,8 @@ python-jose = {version = "^3.3.0", extras = ["cryptography"]}
 pydantic-settings = "^2.2.1"
 email-validator = "^2.1.1"
 httpx = "^0.27.0"
+pytest-cov = "^5.0.0"
+freezegun = "^1.5.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.1"
@@ -29,3 +31,21 @@ flake8 = "^6.1.0"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.coverage]
+[tool.coverage.run]
+omit = [
+    # omit anything in a .local directory anywhere
+    '*/.local/*',
+    '__init__.py',
+    'tests/*',
+    '*/tests/*',
+    # omit anything in a .venv directory anywhere
+    '.venv/*',
+    'api/exceptions.py',
+    'api/config.py',
+    'api/models.py'
+]
+
+[tool.coverage.report]
+skip_empty = true
