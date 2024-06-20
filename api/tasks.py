@@ -115,7 +115,7 @@ def create_recurrent_expenses(session: Session):
         session.commit()
 
 
-def create_recurrent_saving(session: Session):
+def create_recurrent_savings(session: Session):
     """
     Function intended to create all of the recurrent savings configured
     in the recurrentSaving table
@@ -123,7 +123,7 @@ def create_recurrent_saving(session: Session):
     statement = (
         select(Cycle)
         .where(Cycle.is_active == 1)
-        .where(Cycle.is_recurrent_saving_created == 0)
+        .where(Cycle.is_recurrent_savings_created == 0)
     )
     for cycle in session.exec(statement).all():
         recurrent_savings_stmt = (
@@ -140,7 +140,7 @@ def create_recurrent_saving(session: Session):
                 cycle_id=cycle.id or 0
             )
             session.add(saving)
-        cycle.is_recurrent_saving_created = True
+        cycle.is_recurrent_savings_created = True
         session.add(cycle)
         session.commit()
 
@@ -150,4 +150,4 @@ if __name__ == '__main__':
     create_cycles(session)
     create_recurrent_incomes(session)
     create_recurrent_expenses(session)
-    create_recurrent_saving(session)
+    create_recurrent_savings(session)

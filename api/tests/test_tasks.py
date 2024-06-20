@@ -3,7 +3,10 @@ from sqlmodel.pool import StaticPool
 from datetime import datetime
 from freezegun import freeze_time
 from .. import tasks
-from ..models import User, Cycle, Income, RecurrentIncome
+from ..models import (
+    User, Cycle, Income, RecurrentIncome, RecurrentExpense, RecurrentSaving,
+    Expense, Saving
+)
 import pytest
 
 
@@ -90,6 +93,48 @@ def recurrent_incomes_fixture(session: Session, users):
     session.commit()
 
 
+@pytest.fixture(name='recurrent_expenses')
+def recurrent_expenses_fixture(session: Session, users):
+    recurrent_expense_1 = RecurrentExpense(
+        description='expense 1',
+        val_spent=1000,
+        user_id=1,
+        created_at=datetime(2024, 1, 1),
+        updated_at=datetime(2024, 1, 1)
+    )
+    recurrent_expense_2 = RecurrentExpense(
+        description='expense 2',
+        val_spent=40000,
+        user_id=1,
+        created_at=datetime(2024, 1, 1),
+        updated_at=datetime(2024, 1, 1)
+    )
+    session.add(recurrent_expense_1)
+    session.add(recurrent_expense_2)
+    session.commit()
+
+
+@pytest.fixture(name='recurrent_savings')
+def recurrent_savings_fixture(session: Session, users):
+    recurrent_saving_1 = RecurrentSaving(
+        description='saving 1',
+        val_saving=1000,
+        user_id=1,
+        created_at=datetime(2024, 1, 1),
+        updated_at=datetime(2024, 1, 1)
+    )
+    recurrent_saving_2 = RecurrentSaving(
+        description='saving 2',
+        val_saving=40000,
+        user_id=1,
+        created_at=datetime(2024, 1, 1),
+        updated_at=datetime(2024, 1, 1)
+    )
+    session.add(recurrent_saving_1)
+    session.add(recurrent_saving_2)
+    session.commit()
+
+
 def test_create_cycles_user_active(session: Session, users):
     tasks.create_cycles(session)
     cycles = session.exec(select(Cycle)).all()
@@ -132,3 +177,43 @@ def test_create_recurrent_incomes_inactive_cycle(
     cycle = session.exec(select(Cycle)).one()
     assert len(incomes) == 0
     assert cycle.is_recurrent_incomes_created == 0
+
+
+def test_create_recurrent_expenses_active_cycle(
+        session: Session, active_cycle, recurrent_expenses
+):
+    tasks.create_recurrent_expenses(session)
+    expenses = session.exec(select(Expense)).all()
+    cycle = session.exec(select(Cycle)).one()
+    assert len(expenses) == 2
+    assert cycle.is_recurrent_expenses_created == 1
+
+
+def test_create_recurrent_expenses_inactive_cycle(
+        session: Session, inactive_cycle, recurrent_expenses
+):
+    tasks.create_recurrent_expenses(session)
+    expenses = session.exec(select(Expense)).all()
+    cycle = session.exec(select(Cycle)).one()
+    assert len(expenses) == 0
+    assert cycle.is_recurrent_expenses_created == 0
+
+
+def test_create_recurrent_savings_active_cycle(
+        session: Session, active_cycle, recurrent_savings
+):
+    tasks.create_recurrent_savings(session)
+    savings = session.exec(select(Saving)).all()
+    cycle = session.exec(select(Cycle)).one()
+    assert len(savings) == 2
+    assert cycle.is_recurrent_savings_created == 1
+
+
+def test_create_recurrent_savings_inactive_cycle(
+        session: Session, inactive_cycle, recurrent_savings
+):
+    tasks.create_recurrent_savings(session)
+    savings = session.exec(select(Saving)).all()
+    cycle = session.exec(select(Cycle)).one()
+    assert len(savings) == 0
+    assert cycle.is_recurrent_savings_created == 0
