@@ -85,7 +85,7 @@ class Cycle(BaseModel, table=True):
     is_active: bool = True
     is_recurrent_incomes_created: bool = False
     is_recurrent_expenses_created: bool = False
-    is_recurrent_saving_created: bool = False
+    is_recurrent_savings_created: bool = False
     user_id: int = Field(foreign_key='user.id')
     user: User = Relationship(back_populates="cycles")
     incomes: list["Income"] = Relationship(back_populates='cycle')
