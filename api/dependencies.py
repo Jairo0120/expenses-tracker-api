@@ -26,6 +26,11 @@ def get_session():
         yield session
 
 
+async def common_parameters(q: str | None = None, skip: int = 0,
+                            limit: int = 100):
+    return {"q": q, "skip": skip, "limit": limit}
+
+
 async def get_current_user(token: str = Depends(oauth2_scheme),
                            session: Session = Depends(get_session)):
     credentials_exception = HTTPException(
