@@ -1,50 +1,12 @@
-from sqlmodel import Session, SQLModel, create_engine, select
-from sqlmodel.pool import StaticPool
+from sqlmodel import Session, select
 from datetime import datetime
 from freezegun import freeze_time
 from .. import tasks
 from ..models import (
-    User, Cycle, Income, RecurrentIncome, RecurrentExpense, RecurrentSaving,
+    Cycle, Income, RecurrentIncome, RecurrentExpense, RecurrentSaving,
     Expense, Saving
 )
 import pytest
-
-
-@pytest.fixture(name="session")
-def session_fixture():
-    engine = create_engine(
-        "sqlite://",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-    SQLModel.metadata.create_all(engine)
-    with Session(engine) as session:
-        yield session
-
-
-@pytest.fixture(name='users')
-def users_fixture(session: Session):
-    active_user = User(
-        id=1,
-        email='test@test.com',
-        name='Test',
-        auth0_id='auth0|1',
-        is_active=True,
-        created_at=datetime(2024, 1, 1),
-        updated_at=datetime(2024, 1, 1)
-    )
-    inactive_user = User(
-        id=2,
-        email='test2@test.com',
-        name='Test',
-        auth0_id='auth0|2',
-        is_active=False,
-        created_at=datetime(2024, 1, 1),
-        updated_at=datetime(2024, 1, 1)
-    )
-    session.add(active_user)
-    session.add(inactive_user)
-    session.commit()
 
 
 @pytest.fixture(name='active_cycle')
