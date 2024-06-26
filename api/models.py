@@ -55,13 +55,20 @@ class RecurrentSaving(BaseModel, table=True):
     )
 
 
-class RecurrentExpense(BaseModel, table=True):
+class RecurrentExpenseBase(SQLModel):
     description: str
     val_spent: float
     enabled: bool = True
     categories: str = ''
+
+
+class RecurrentExpense(BaseModel, RecurrentExpenseBase, table=True):
     user_id: int = Field(foreign_key='user.id')
     user: User = Relationship(back_populates="recurrent_expenses")
+
+
+class RecurrentExpenseCreate(RecurrentExpenseBase):
+    pass
 
 
 class RecurrentIncome(BaseModel, table=True):
