@@ -5,7 +5,8 @@
     ],
     "python.analysis.completeFunctionParens": true,
     "python.testing.pytestArgs": [
-        "app"
+        "app",
+        "api"
     ],
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,
