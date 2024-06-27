@@ -71,6 +71,13 @@ class RecurrentExpenseCreate(RecurrentExpenseBase):
     pass
 
 
+class RecurrentExpenseUpdate(SQLModel):
+    description: str | None = None
+    val_spent: float | None = None
+    enabled: bool | None = None
+    categories: str | None = None
+
+
 class RecurrentIncome(BaseModel, table=True):
     description: str
     val_income: float
