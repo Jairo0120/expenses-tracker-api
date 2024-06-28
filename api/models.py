@@ -112,8 +112,11 @@ class RecurrentIncome(BaseModel, RecurrentIncomeBase, table=True):
     user: User = Relationship(back_populates="recurrent_incomes")
 
 
-class Category(BaseModel, table=True):
+class CategoryBase(SQLModel):
     description: str
+
+
+class Category(BaseModel, CategoryBase, table=True):
     user_id: int = Field(foreign_key='user.id')
     user: User = Relationship(back_populates="categories")
 
