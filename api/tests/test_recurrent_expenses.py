@@ -59,7 +59,7 @@ def test_create_recurrent_expense_incomplete_data(
         "description": "RE 1",
     }
     response = client.post("/recurrent_expenses/", json=req_data)
-    assert response.status_code == 400
+    assert response.status_code == 422
 
 
 def test_update_recurrent_expense_other_user(

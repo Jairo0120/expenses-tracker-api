@@ -44,15 +44,28 @@ class UserCreate(UserBase):
     pass
 
 
-class RecurrentSaving(BaseModel, table=True):
+class RecurrentSavingBase(SQLModel):
     description: str
     val_saving: float
     enabled: bool = True
+
+
+class RecurrentSaving(BaseModel, RecurrentSavingBase, table=True):
     user_id: int = Field(foreign_key='user.id')
     user: User = Relationship(back_populates="recurrent_savings")
     outcomes: list["SavingOutcome"] = Relationship(
         back_populates="recurrent_saving"
     )
+
+
+class RecurrentSavingUpdate(SQLModel):
+    description: str | None = None
+    val_saving: float | None = None
+    enabled: bool | None = None
+
+
+class RecurrentSavingCreate(RecurrentSavingBase):
+    pass
 
 
 class RecurrentExpenseBase(SQLModel):

@@ -97,3 +97,22 @@ async def delete_recurrent_expense(
     session.delete(db_recurrent_expense)
     session.commit()
     return {"ok": True}
+
+
+@router.get("/{recurrent_expense_id}", response_model=RecurrentExpense)
+async def read_recurrent_expense(
+    recurrent_expense_id: int,
+    current_user: User = Depends(get_current_active_user),
+    session: Session = Depends(get_session)
+):
+    db_recurrent_expense = session.exec(
+        select(RecurrentExpense)
+        .where(RecurrentExpense.id == recurrent_expense_id)
+        .where(RecurrentExpense.user_id == current_user.id)
+    ).first()
+    if not db_recurrent_expense:
+        raise HTTPException(
+            status_code=404,
+            detail="Recurrent expense not found"
+        )
+    return db_recurrent_expense
