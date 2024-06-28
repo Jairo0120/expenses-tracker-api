@@ -8,19 +8,19 @@ import pytest
 def recurrent_expense_fixtures(session: Session):
     recurrent_expense_1 = RecurrentExpense(
         id=1,
-        description='Desc 1',
+        description='Expense 1',
         val_spent=100,
         user_id=1
     )
     recurrent_expense_2 = RecurrentExpense(
         id=2,
-        description='Desc 2',
+        description='Expense 2',
         val_spent=20000,
         user_id=1
     )
     recurrent_expense_3 = RecurrentExpense(
         id=3,
-        description='Desc 3',
+        description='Expense 3',
         val_spent=3994,
         user_id=2
     )
@@ -84,7 +84,7 @@ def test_update_recurrent_expense_other_empty_values(
     response = client.patch("/recurrent_expenses/2", json=req_data)
     data = response.json()
     assert response.status_code == 200
-    assert data['description'] == "Desc 2"
+    assert data['description'] == "Expense 2"
     assert data['val_spent'] == 20000
 
 

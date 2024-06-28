@@ -91,10 +91,23 @@ class RecurrentExpenseUpdate(SQLModel):
     categories: str | None = None
 
 
-class RecurrentIncome(BaseModel, table=True):
+class RecurrentIncomeBase(SQLModel):
     description: str
     val_income: float
     enabled: bool = True
+
+
+class RecurrentIncomeCreate(RecurrentIncomeBase):
+    pass
+
+
+class RecurrentIncomeUpdate(SQLModel):
+    description: str | None = None
+    val_income: float | None = None
+    enabled: bool | None = None
+
+
+class RecurrentIncome(BaseModel, RecurrentIncomeBase, table=True):
     user_id: int = Field(foreign_key='user.id')
     user: User = Relationship(back_populates="recurrent_incomes")
 

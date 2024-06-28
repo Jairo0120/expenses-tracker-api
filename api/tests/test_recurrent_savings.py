@@ -8,19 +8,19 @@ import pytest
 def recurrent_saving_fixtures(session: Session):
     recurrent_saving_1 = RecurrentSaving(
         id=1,
-        description='Desc 1',
+        description='Saving 1',
         val_saving=100,
         user_id=1
     )
     recurrent_saving_2 = RecurrentSaving(
         id=2,
-        description='Desc 2',
+        description='Saving 2',
         val_saving=20000,
         user_id=1
     )
     recurrent_saving_3 = RecurrentSaving(
         id=3,
-        description='Desc 3',
+        description='Saving 3',
         val_saving=3994,
         user_id=2
     )
@@ -83,7 +83,7 @@ def test_update_recurrent_saving_other_empty_values(
     response = client.patch("/recurrent_savings/2", json=req_data)
     data = response.json()
     assert response.status_code == 200
-    assert data['description'] == "Desc 2"
+    assert data['description'] == "Saving 2"
     assert data['val_saving'] == 20000
 
 
@@ -121,6 +121,6 @@ def test_get_single_recurrent_saving_ok(
     response = client.get("/recurrent_savings/1")
     data = response.json()
     assert response.status_code == 200
-    assert data['description'] == "Desc 1"
+    assert data['description'] == "Saving 1"
     assert data['val_saving'] == 100
     assert data['user_id'] == 1
