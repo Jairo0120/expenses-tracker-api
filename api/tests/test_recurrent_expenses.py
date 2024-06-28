@@ -36,3 +36,71 @@ def test_read_recurrent_expenses_ok(client: TestClient, recurrent_expenses):
 
     assert response.status_code == 200
     assert len(data) == 2
+
+
+def test_new_recurrent_expense_created(client: TestClient, recurrent_expenses):
+    req_data = {
+        "description": "RE 1",
+        "val_spent": 100,
+        "categories": ""
+    }
+    response = client.post("/recurrent_expenses/", json=req_data)
+    resp_data = response.json()
+    assert response.status_code == 200
+    assert resp_data['description'] == "RE 1"
+    assert resp_data['user_id'] == 1
+
+
+def test_create_recurrent_expense_incomplete_data(
+        client: TestClient,
+        recurrent_expenses
+):
+    req_data = {
+        "description": "RE 1",
+    }
+    response = client.post("/recurrent_expenses/", json=req_data)
+    assert response.status_code == 400
+
+
+def test_update_recurrent_expense_other_user(
+        client: TestClient,
+        recurrent_expenses
+):
+    req_data = {
+        "description": "RE 1",
+    }
+    response = client.patch("/recurrent_expenses/3", json=req_data)
+    assert response.status_code == 404
+
+
+def test_update_recurrent_expense_other_empty_values(
+        client: TestClient,
+        recurrent_expenses
+):
+    req_data = {
+        "description": None,
+        "val_spent": None
+    }
+    response = client.patch("/recurrent_expenses/2", json=req_data)
+    data = response.json()
+    assert response.status_code == 200
+    assert data['description'] == "Desc 2"
+    assert data['val_spent'] == 20000
+
+
+def test_delete_recurrent_expense_other_user(
+        client: TestClient,
+        recurrent_expenses
+):
+    response = client.delete("/recurrent_expenses/3")
+    assert response.status_code == 404
+
+
+def test_delete_recurrent_expense_success(
+        client: TestClient,
+        recurrent_expenses
+):
+    response = client.delete("/recurrent_expenses/2")
+    assert response.status_code == 200
+    response_2 = client.delete("/recurrent_expenses/2")
+    assert response_2.status_code == 404
