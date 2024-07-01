@@ -4,7 +4,7 @@ from freezegun import freeze_time
 from .. import tasks
 from ..models import (
     Cycle, Income, RecurrentIncome, RecurrentExpense, RecurrentSaving,
-    Expense, Saving
+    Expense, Saving, RecurrentBudget, Budget
 )
 import pytest
 
@@ -97,6 +97,27 @@ def recurrent_savings_fixture(session: Session, users):
     session.commit()
 
 
+@pytest.fixture(name="recurrent_budgets")
+def recurrent_budgets_fixture(session: Session, users):
+    recurrent_budget_1 = RecurrentBudget(
+        description='budget 1',
+        val_budget=600000,
+        user_id=1,
+        created_at=datetime(2024, 1, 1),
+        updated_at=datetime(2024, 1, 1)
+    )
+    recurrent_budget_2 = RecurrentBudget(
+        description='budget 2',
+        val_budget=1000,
+        user_id=1,
+        created_at=datetime(2024, 1, 1),
+        updated_at=datetime(2024, 1, 1)
+    )
+    session.add(recurrent_budget_1)
+    session.add(recurrent_budget_2)
+    session.commit()
+
+
 def test_create_cycles_user_active(session: Session, users):
     tasks.create_cycles(session)
     cycles = session.exec(select(Cycle)).all()
@@ -179,3 +200,23 @@ def test_create_recurrent_savings_inactive_cycle(
     cycle = session.exec(select(Cycle)).one()
     assert len(savings) == 0
     assert cycle.is_recurrent_savings_created == 0
+
+
+def test_create_recurrent_budgets_active_cycle(
+        session: Session, active_cycle, recurrent_budgets
+):
+    tasks.create_recurrent_budgets(session)
+    budgets = session.exec(select(Budget)).all()
+    cycle = session.exec(select(Cycle)).one()
+    assert len(budgets) == 2
+    assert cycle.is_recurrent_budgets_created == 1
+
+
+def test_create_recurrent_budgets_inactive_cycle(
+        session: Session, inactive_cycle, recurrent_budgets
+):
+    tasks.create_recurrent_budgets(session)
+    budgets = session.exec(select(Budget)).all()
+    cycle = session.exec(select(Cycle)).one()
+    assert len(budgets) == 0
+    assert cycle.is_recurrent_budgets_created == 0

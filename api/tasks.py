@@ -1,7 +1,7 @@
 from api import config
 from api.models import (
     Cycle, User, RecurrentIncome, Income, RecurrentExpense, Expense,
-    SourceEnum, RecurrentSaving, Saving
+    SourceEnum, RecurrentSaving, Saving, Budget, RecurrentBudget
 )
 from sqlmodel import Session, create_engine, select, update
 from datetime import date, datetime
@@ -145,9 +145,38 @@ def create_recurrent_savings(session: Session):
         session.commit()
 
 
+def create_recurrent_budgets(session: Session):
+    """
+    Function intended to create all of the recurrent budgets configured
+    in the recurrentBudget table
+    """
+    statement = (
+        select(Cycle)
+        .where(Cycle.is_active == 1)
+        .where(Cycle.is_recurrent_budgets_created == 0)
+    )
+    for cycle in session.exec(statement).all():
+        recurrent_budgets_stmt = (
+            select(RecurrentBudget)
+            .where(RecurrentBudget.is_enabled == 1)
+            .where(RecurrentBudget.user_id == cycle.user_id)
+        )
+        for re_budget in session.exec(recurrent_budgets_stmt):
+            budget = Budget(
+                description=re_budget.description,
+                val_budget=re_budget.val_budget,
+                cycle_id=cycle.id or 0
+            )
+            session.add(budget)
+        cycle.is_recurrent_budgets_created = True
+        session.add(cycle)
+        session.commit()
+
+
 if __name__ == '__main__':
     session = get_session()
     create_cycles(session)
     create_recurrent_incomes(session)
     create_recurrent_expenses(session)
     create_recurrent_savings(session)
+    create_recurrent_budgets(session)

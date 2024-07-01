@@ -132,6 +132,7 @@ class Cycle(BaseModel, table=True):
     is_recurrent_incomes_created: bool = False
     is_recurrent_expenses_created: bool = False
     is_recurrent_savings_created: bool = False
+    is_recurrent_budgets_created: bool = False
     user_id: int = Field(foreign_key='user.id')
     user: User = Relationship(back_populates="cycles")
     incomes: list["Income"] = Relationship(back_populates='cycle')
@@ -151,6 +152,7 @@ class Budget(BaseModel, table=True):
 class RecurrentBudget(BaseModel, table=True):
     description: str
     val_budget: float
+    is_enabled: bool = True
     user_id: int = Field(foreign_key='user.id')
     user: User = Relationship(back_populates="recurrent_budgets")
 
