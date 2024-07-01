@@ -9,19 +9,19 @@ def recurrent_expense_fixtures(session: Session):
     recurrent_expense_1 = RecurrentExpense(
         id=1,
         description='Expense 1',
-        val_spent=100,
+        val_expense=100,
         user_id=1
     )
     recurrent_expense_2 = RecurrentExpense(
         id=2,
         description='Expense 2',
-        val_spent=20000,
+        val_expense=20000,
         user_id=1
     )
     recurrent_expense_3 = RecurrentExpense(
         id=3,
         description='Expense 3',
-        val_spent=3994,
+        val_expense=3994,
         user_id=2
     )
     session.add(recurrent_expense_1)
@@ -41,7 +41,7 @@ def test_read_recurrent_expenses_ok(client: TestClient, recurrent_expenses):
 def test_new_recurrent_expense_created(client: TestClient, recurrent_expenses):
     req_data = {
         "description": "RE 1",
-        "val_spent": 100,
+        "val_expense": 100,
         "categories": ""
     }
     response = client.post("/recurrent_expenses/", json=req_data)
@@ -79,13 +79,13 @@ def test_update_recurrent_expense_other_empty_values(
 ):
     req_data = {
         "description": None,
-        "val_spent": None
+        "val_expense": None
     }
     response = client.patch("/recurrent_expenses/2", json=req_data)
     data = response.json()
     assert response.status_code == 200
     assert data['description'] == "Expense 2"
-    assert data['val_spent'] == 20000
+    assert data['val_expense'] == 20000
 
 
 def test_delete_recurrent_expense_other_user(

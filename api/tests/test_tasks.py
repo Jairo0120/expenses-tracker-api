@@ -59,14 +59,14 @@ def recurrent_incomes_fixture(session: Session, users):
 def recurrent_expenses_fixture(session: Session, users):
     recurrent_expense_1 = RecurrentExpense(
         description='expense 1',
-        val_spent=1000,
+        val_expense=1000,
         user_id=1,
         created_at=datetime(2024, 1, 1),
         updated_at=datetime(2024, 1, 1)
     )
     recurrent_expense_2 = RecurrentExpense(
         description='expense 2',
-        val_spent=40000,
+        val_expense=40000,
         user_id=1,
         created_at=datetime(2024, 1, 1),
         updated_at=datetime(2024, 1, 1)

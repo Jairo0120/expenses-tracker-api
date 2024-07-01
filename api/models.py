@@ -37,6 +37,9 @@ class User(UserBase, table=True):
         back_populates="user"
     )
     categories: list["Category"] = Relationship(back_populates="user")
+    recurrent_budgets: list["RecurrentBudget"] = Relationship(
+        back_populates="user"
+    )
     cycles: list["Cycle"] = Relationship(back_populates="user")
 
 
@@ -70,7 +73,7 @@ class RecurrentSavingCreate(RecurrentSavingBase):
 
 class RecurrentExpenseBase(SQLModel):
     description: str
-    val_spent: float
+    val_expense: float
     enabled: bool = True
     categories: str = ''
 
@@ -86,7 +89,7 @@ class RecurrentExpenseCreate(RecurrentExpenseBase):
 
 class RecurrentExpenseUpdate(SQLModel):
     description: str | None = None
-    val_spent: float | None = None
+    val_expense: float | None = None
     enabled: bool | None = None
     categories: str | None = None
 
@@ -134,6 +137,22 @@ class Cycle(BaseModel, table=True):
     incomes: list["Income"] = Relationship(back_populates='cycle')
     expenses: list["Expense"] = Relationship(back_populates='cycle')
     savings: list["Saving"] = Relationship(back_populates='cycle')
+    budgets: list["Budget"] = Relationship(back_populates='cycle')
+
+
+class Budget(BaseModel, table=True):
+    description: str
+    val_budget: float
+    cycle_id: int = Field(foreign_key='cycle.id')
+    cycle: Cycle = Relationship(back_populates="budgets")
+    expenses: list["Expense"] = Relationship(back_populates="budget")
+
+
+class RecurrentBudget(BaseModel, table=True):
+    description: str
+    val_budget: float
+    user_id: int = Field(foreign_key='user.id')
+    user: User = Relationship(back_populates="recurrent_budgets")
 
 
 class Income(BaseModel, table=True):
@@ -147,18 +166,20 @@ class Income(BaseModel, table=True):
 
 class Expense(BaseModel, table=True):
     description: str
-    val_spent: float
-    date_spent: datetime
+    val_expense: float
+    date_expense: datetime
     source: SourceEnum
     categories: str
     is_recurrent_expense: bool = False
+    budget_id: int | None = Field(foreign_key='budget.id', nullable=True)
+    budget: Budget | None = Relationship(back_populates="expenses")
     cycle_id: int = Field(foreign_key='cycle.id')
     cycle: Cycle = Relationship(back_populates="expenses")
 
 
 class Saving(BaseModel, table=True):
     description: str
-    val_saved: float
+    val_saving: float
     date_saving: datetime
     is_recurrent_saving: bool = False
     cycle_id: int = Field(foreign_key='cycle.id')

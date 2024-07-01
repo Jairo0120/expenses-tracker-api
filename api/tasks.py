@@ -102,8 +102,8 @@ def create_recurrent_expenses(session: Session):
         for re_expense in session.exec(recurrent_expenses_stmt):
             expense = Expense(
                 description=re_expense.description,
-                val_spent=re_expense.val_spent,
-                date_spent=datetime.now(),
+                val_expense=re_expense.val_expense,
+                date_expense=datetime.now(),
                 is_recurrent_expense=True,
                 source=SourceEnum.recurrent,
                 categories=re_expense.categories,
@@ -134,7 +134,7 @@ def create_recurrent_savings(session: Session):
         for re_saving in session.exec(recurrent_savings_stmt):
             saving = Saving(
                 description=re_saving.description,
-                val_saved=re_saving.val_saving,
+                val_saving=re_saving.val_saving,
                 date_saving=datetime.now(),
                 is_recurrent_saving=True,
                 cycle_id=cycle.id or 0
