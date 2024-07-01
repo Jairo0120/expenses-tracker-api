@@ -149,12 +149,25 @@ class Budget(BaseModel, table=True):
     expenses: list["Expense"] = Relationship(back_populates="budget")
 
 
-class RecurrentBudget(BaseModel, table=True):
+class RecurrentBudgetBase(SQLModel):
     description: str
     val_budget: float
     is_enabled: bool = True
+
+
+class RecurrentBudget(BaseModel, RecurrentBudgetBase, table=True):
     user_id: int = Field(foreign_key='user.id')
     user: User = Relationship(back_populates="recurrent_budgets")
+
+
+class RecurrentBudgetCreate(RecurrentBudgetBase):
+    pass
+
+
+class RecurrentBudgetUpdate(SQLModel):
+    description: str | None = None
+    val_budget: float | None = None
+    is_enabled: bool | None = None
 
 
 class Income(BaseModel, table=True):
