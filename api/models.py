@@ -141,12 +141,26 @@ class Cycle(BaseModel, table=True):
     budgets: list["Budget"] = Relationship(back_populates='cycle')
 
 
+class CyclePublic(SQLModel):
+    id: int
+    description: str
+    start_date: date
+    end_date: date
+    is_active: bool = True
+
+
 class Budget(BaseModel, table=True):
     description: str
     val_budget: float
     cycle_id: int = Field(foreign_key='cycle.id')
     cycle: Cycle = Relationship(back_populates="budgets")
     expenses: list["Expense"] = Relationship(back_populates="budget")
+
+
+class BudgetPublic(SQLModel):
+    id: int
+    description: str
+    val_budget: float
 
 
 class RecurrentBudgetBase(SQLModel):
@@ -198,6 +212,11 @@ class Expense(ExpenseBase, BaseModel, table=True):
 class ExpenseCreate(ExpenseBase):
     cycle_id: int | None = None
     budget_id: int | None = None
+
+
+class ExpensePublic(ExpenseBase):
+    budget: BudgetPublic | None = None
+    cycle: CyclePublic
 
 
 class Saving(BaseModel, table=True):

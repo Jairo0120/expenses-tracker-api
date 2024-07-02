@@ -2,7 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from api.dependencies import (
     get_current_active_user, get_session, common_parameters
 )
-from api.models import User, Expense, Cycle, ExpenseCreate, Budget
+from api.models import (
+    User, Expense, Cycle, ExpenseCreate, Budget, ExpensePublic
+)
 from sqlmodel import Session, select
 from typing import Annotated
 import logging
@@ -16,7 +18,7 @@ router = APIRouter(
 CommonsDep = Annotated[dict, Depends(common_parameters)]
 
 
-@router.get("/", response_model=list[Expense])
+@router.get("/", response_model=list[ExpensePublic])
 async def read_expenses(
     commons: CommonsDep,
     cycle_id: int | None = None,
@@ -46,7 +48,7 @@ async def read_expenses(
     return session.exec(stmt).all()
 
 
-@router.post("/", response_model=Expense)
+@router.post("/", response_model=ExpensePublic)
 async def create_expense(
     *,
     current_user: User = Depends(get_current_active_user),
