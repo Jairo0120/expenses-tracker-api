@@ -2,9 +2,10 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from api.routers import (
     users, recurrent_expenses, recurrent_savings, recurrent_incomes,
-    categories, recurrent_budgets
+    categories, recurrent_budgets, expenses
 )
-from .database import create_db_and_tables
+from api.database import create_db_and_tables
+import uvicorn
 
 
 @asynccontextmanager
@@ -22,3 +23,8 @@ app.include_router(recurrent_savings.router)
 app.include_router(recurrent_incomes.router)
 app.include_router(recurrent_budgets.router)
 app.include_router(categories.router)
+app.include_router(expenses.router)
+
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)
