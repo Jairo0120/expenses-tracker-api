@@ -1,19 +1,26 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
+from logging.config import dictConfig
 from api.routers import (
     users, recurrent_expenses, recurrent_savings, recurrent_incomes,
     categories, recurrent_budgets, expenses
 )
 from api.database import create_db_and_tables
+from api.log_config import LogConfig
 import uvicorn
+import logging
+
+
+dictConfig(LogConfig().model_dump())
+logger = logging.getLogger("expenses-tracker")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print('Loading tables...')
+    logger.info('Loading tables...')
     create_db_and_tables()
     yield
-    print('Shuting down...')
+    logger.info('Shuting down...')
 
 
 app = FastAPI(lifespan=lifespan)
