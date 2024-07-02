@@ -179,17 +179,25 @@ class Income(BaseModel, table=True):
     cycle: Cycle = Relationship(back_populates="incomes")
 
 
-class Expense(BaseModel, table=True):
+class ExpenseBase(SQLModel):
     description: str
     val_expense: float
-    date_expense: datetime
-    source: SourceEnum
-    categories: str
+    date_expense: datetime = Field(default=datetime.now(), nullable=False)
+    source: SourceEnum = SourceEnum.app
+    categories: str = ""
+
+
+class Expense(ExpenseBase, BaseModel, table=True):
     is_recurrent_expense: bool = False
     budget_id: int | None = Field(foreign_key='budget.id', nullable=True)
     budget: Budget | None = Relationship(back_populates="expenses")
     cycle_id: int = Field(foreign_key='cycle.id')
     cycle: Cycle = Relationship(back_populates="expenses")
+
+
+class ExpenseCreate(ExpenseBase):
+    cycle_id: int | None = None
+    budget_id: int | None = None
 
 
 class Saving(BaseModel, table=True):
