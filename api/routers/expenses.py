@@ -3,7 +3,7 @@ from api.dependencies import (
     get_current_active_user, get_session, common_parameters
 )
 from api.models import (
-    User, Expense, Cycle, ExpenseCreate, Budget, ExpensePublic
+    User, Expense, Cycle, ExpenseCreate, Budget, ExpensePublic, ExpenseUpdate
 )
 from sqlmodel import Session, select
 from typing import Annotated
@@ -90,5 +90,55 @@ async def create_expense(
         logger.error(f"Error creating expense: {e}")
         raise HTTPException(status_code=500, detail='Error creating expense')
 
+    session.refresh(db_expense)
+    return db_expense
+
+
+@router.patch("/{expense_id}", response_model=ExpensePublic)
+def update_expense(
+    *,
+    current_user: User = Depends(get_current_active_user),
+    session: Session = Depends(get_session),
+    expense_id: int,
+    expense: ExpenseUpdate
+):
+    logger.info(f"Updating expense {expense_id}: {expense}")
+    db_expense = session.exec(
+        select(Expense)
+        .where(Expense.id == expense_id)
+    ).first()
+    if not db_expense or db_expense.cycle.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail='Expense not found')
+
+    if expense.cycle_id:
+        db_cycle = session.exec(
+            select(Cycle)
+            .where(Cycle.user_id == current_user.id)
+            .where(Cycle.id == expense.cycle_id)
+        ).first()
+        if not db_cycle:
+            raise HTTPException(status_code=404, detail='Cycle not found')
+
+    if (expense.budget_id
+       and expense.cycle_id
+       and expense.cycle_id == db_expense.cycle_id):
+        budget_stmt = (
+            select(Budget)
+            .where(Budget.id == expense.budget_id)
+            .where(Budget.cycle_id == db_expense.cycle_id)
+        )
+        if not session.exec(budget_stmt).first():
+            raise HTTPException(status_code=404, detail='Budget not found')
+    expense_data = expense.model_dump(
+        exclude_unset=True,
+        exclude_none=True
+    )
+    # If the cycle has been updated, we need to remove the budget as this
+    # could lead to data inconsistency
+    if expense.cycle_id and expense.cycle_id != db_expense.cycle_id:
+        expense_data['budget_id'] = None
+    db_expense.sqlmodel_update(expense_data)
+    session.add(db_expense)
+    session.commit()
     session.refresh(db_expense)
     return db_expense

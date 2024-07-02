@@ -215,8 +215,19 @@ class ExpenseCreate(ExpenseBase):
 
 
 class ExpensePublic(ExpenseBase):
+    id: int
     budget: BudgetPublic | None = None
     cycle: CyclePublic
+
+
+class ExpenseUpdate(SQLModel):
+    description: str | None = None
+    val_expense: float | None = None
+    date_expense: datetime | None = None
+    source: SourceEnum | None = None
+    categories: str | None = None
+    cycle_id: int | None = None
+    budget_id: int | None = None
 
 
 class Saving(BaseModel, table=True):
