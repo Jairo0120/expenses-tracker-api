@@ -142,3 +142,23 @@ def update_expense(
     session.commit()
     session.refresh(db_expense)
     return db_expense
+
+
+@router.delete("/{expense_id}")
+def delete_expense(
+    *,
+    current_user: User = Depends(get_current_active_user),
+    session: Session = Depends(get_session),
+    expense_id: int
+):
+    logger.info(f"Deleting expense {expense_id}")
+    db_expense = session.exec(
+        select(Expense)
+        .where(Expense.id == expense_id)
+    ).first()
+    if not db_expense or db_expense.cycle.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail='Expense not found')
+
+    session.delete(db_expense)
+    session.commit()
+    return {"detail": "Expense deleted"}
