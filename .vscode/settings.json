@@ -10,4 +10,8 @@
     ],
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,
+    "black-formatter.args": [
+        "--line-length",
+        "79"
+    ],
 }
