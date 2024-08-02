@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from logging.config import dictConfig
 from api.routers import (
     users, recurrent_expenses, recurrent_savings, recurrent_incomes,
-    categories, recurrent_budgets, expenses
+    categories, recurrent_budgets, expenses, budgets
 )
 from api.database import create_db_and_tables
 from api.log_config import LogConfig
@@ -31,6 +31,7 @@ app.include_router(recurrent_incomes.router)
 app.include_router(recurrent_budgets.router)
 app.include_router(categories.router)
 app.include_router(expenses.router)
+app.include_router(budgets.router)
 
 
 if __name__ == "__main__":
