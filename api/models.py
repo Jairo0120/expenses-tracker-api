@@ -13,7 +13,7 @@ class SourceEnum(str, Enum):
 
 class BaseModel(SQLModel):
     id: int | None = Field(default=None, primary_key=True)
-    created_at: datetime = Field(default=datetime.now(), nullable=False)
+    created_at: datetime = Field(default_factory=datetime.now, nullable=False)
     updated_at: datetime = Field(default_factory=datetime.now, nullable=False)
 
 
