@@ -48,7 +48,7 @@ async def read_expenses(
     return session.exec(stmt).all()
 
 
-@router.post("/", response_model=ExpensePublic)
+@router.post("/", response_model=ExpensePublic, status_code=201)
 async def create_expense(
     *,
     current_user: User = Depends(get_current_active_user),
