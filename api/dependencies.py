@@ -43,7 +43,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme),
         # python-jose takes care of the validation of the exp date of the token
         payload = jwt.decode(
             token,
-            Path(settings.auth0_file_url).read_text(),
+            Path(settings.auth0_certificate_url).read_text(),
             algorithms="RS256",
             audience=settings.auth0_audience
         )
