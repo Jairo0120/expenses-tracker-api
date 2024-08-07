@@ -5,9 +5,14 @@ from api.models import (
 )
 from sqlmodel import Session, create_engine, select, update
 from datetime import date, datetime
+from logging.config import dictConfig
+from api.log_config import LogConfig
 from api import utils
+import logging
 
 
+dictConfig(LogConfig().model_dump())
+logger = logging.getLogger("expenses-tracker")
 db_session = None
 
 
@@ -171,6 +176,16 @@ def create_recurrent_budgets(session: Session):
         cycle.is_recurrent_budgets_created = True
         session.add(cycle)
         session.commit()
+
+
+def lambda_handler(event, context):
+    logger.info("Creating recurrent objects...")
+    session = get_session()
+    create_cycles(session)
+    create_recurrent_incomes(session)
+    create_recurrent_expenses(session)
+    create_recurrent_savings(session)
+    create_recurrent_budgets(session)
 
 
 if __name__ == '__main__':
