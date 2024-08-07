@@ -16,6 +16,7 @@ from api.log_config import LogConfig
 from mangum import Mangum
 import uvicorn
 import logging
+import os
 
 
 dictConfig(LogConfig().model_dump())
@@ -30,7 +31,12 @@ async def lifespan(app: FastAPI):
     logger.info("Shuting down...")
 
 
-app = FastAPI(lifespan=lifespan)
+# ENV environment variable only used in AWS Lambda. It is used to set the
+# root path of the API Gateway and avoid the error showing the documentation.
+# More info:
+# https://fastapi.tiangolo.com/advanced/behind-a-proxy/#behind-a-proxy
+env = os.environ.get("ENV", "")
+app = FastAPI(lifespan=lifespan, root_path=f"/{env}")
 app.include_router(users.router)
 app.include_router(recurrent_expenses.router)
 app.include_router(recurrent_savings.router)
