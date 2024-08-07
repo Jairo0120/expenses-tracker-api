@@ -2,11 +2,18 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from logging.config import dictConfig
 from api.routers import (
-    users, recurrent_expenses, recurrent_savings, recurrent_incomes,
-    categories, recurrent_budgets, expenses, budgets
+    users,
+    recurrent_expenses,
+    recurrent_savings,
+    recurrent_incomes,
+    categories,
+    recurrent_budgets,
+    expenses,
+    budgets,
 )
 from api.database import create_db_and_tables
 from api.log_config import LogConfig
+from mangum import Mangum
 import uvicorn
 import logging
 
@@ -17,10 +24,10 @@ logger = logging.getLogger("expenses-tracker")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info('Loading tables...')
+    logger.info("Loading tables...")
     create_db_and_tables()
     yield
-    logger.info('Shuting down...')
+    logger.info("Shuting down...")
 
 
 app = FastAPI(lifespan=lifespan)
@@ -32,6 +39,8 @@ app.include_router(recurrent_budgets.router)
 app.include_router(categories.router)
 app.include_router(expenses.router)
 app.include_router(budgets.router)
+
+handler = Mangum(app, lifespan="on")
 
 
 if __name__ == "__main__":

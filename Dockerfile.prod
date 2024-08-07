@@ -1,4 +1,4 @@
-FROM python:3.12 AS requirements-stage
+FROM public.ecr.aws/lambda/python:3.12 AS requirements-stage
 
 WORKDIR /tmp
 
@@ -8,18 +8,18 @@ COPY ./pyproject.toml ./poetry.lock* /tmp/
 
 RUN poetry export -f requirements.txt --output requirements.txt --without-hashes
 
-FROM python:3.12
+FROM public.ecr.aws/lambda/python:3.12
 
-WORKDIR /code
+COPY --from=requirements-stage /tmp/requirements.txt /requirements.txt
 
-COPY --from=requirements-stage /tmp/requirements.txt /code/requirements.txt
+RUN pip install --no-cache-dir --upgrade -r /requirements.txt
 
-RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
+COPY ./api ${LAMBDA_TASK_ROOT}/api
 
-COPY ./api /code/api
+COPY ./.env.prod ${LAMBDA_TASK_ROOT}/api
 
-COPY ./.env.prod /code/.env
+COPY ./auth0-certificate.pem ${LAMBDA_TASK_ROOT}/api
 
-COPY ./auth0-certificate.pem /code/auth0-certificate.pem
+WORKDIR ${LAMBDA_TASK_ROOT}
 
-CMD ["fastapi", "run", "api/main.py", "--port", "80"]
+CMD ["api.main.handler"]
