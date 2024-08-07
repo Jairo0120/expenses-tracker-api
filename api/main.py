@@ -35,8 +35,8 @@ async def lifespan(app: FastAPI):
 # root path of the API Gateway and avoid the error showing the documentation.
 # More info:
 # https://fastapi.tiangolo.com/advanced/behind-a-proxy/#behind-a-proxy
-env = os.environ.get("ENV", "")
-app = FastAPI(lifespan=lifespan, root_path=f"/{env}")
+env = os.getenv("ENV")
+app = FastAPI(lifespan=lifespan, root_path=f"/{env}" if env else "")
 app.include_router(users.router)
 app.include_router(recurrent_expenses.router)
 app.include_router(recurrent_savings.router)
