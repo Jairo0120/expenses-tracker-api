@@ -16,7 +16,9 @@ RUN pip install --no-cache-dir --upgrade -r /requirements.txt
 
 COPY ./api ${LAMBDA_TASK_ROOT}/api
 
-COPY ./.env.prod ${LAMBDA_TASK_ROOT}/api
+# The execution is done from /var/task, so the .env file needs to be in this
+# directory instead of inside the api directory
+COPY ./.env.prod ${LAMBDA_TASK_ROOT}/.env
 
 COPY ./auth0-certificate.pem ${LAMBDA_TASK_ROOT}/api
 

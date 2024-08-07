@@ -14,4 +14,5 @@ engine = create_engine(sqlite_url, echo=True, connect_args=connect_args)
 
 
 def create_db_and_tables():
+    print(f"Creating tables in {sqlite_url}")
     SQLModel.metadata.create_all(engine)
