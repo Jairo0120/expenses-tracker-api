@@ -16,7 +16,7 @@ router = APIRouter(
 CommonsDep = Annotated[dict, Depends(common_parameters)]
 
 
-@router.get("/", response_model=list[RecurrentSaving])
+@router.get("", response_model=list[RecurrentSaving])
 async def read_recurrent_savings(
     commons: CommonsDep,
     current_user: User = Depends(get_current_active_user),
@@ -31,7 +31,7 @@ async def read_recurrent_savings(
     return session.exec(stmt).all()
 
 
-@router.post("/", response_model=RecurrentSaving)
+@router.post("", response_model=RecurrentSaving)
 async def create_recurrent_saving(
     *,
     current_user: User = Depends(get_current_active_user),

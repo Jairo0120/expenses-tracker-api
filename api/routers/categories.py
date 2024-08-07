@@ -14,7 +14,7 @@ router = APIRouter(
 CommonsDep = Annotated[dict, Depends(common_parameters)]
 
 
-@router.get("/", response_model=list[Category])
+@router.get("", response_model=list[Category])
 async def read_categories(
     commons: CommonsDep,
     current_user: User = Depends(get_current_active_user),
@@ -29,7 +29,7 @@ async def read_categories(
     return session.exec(stmt).all()
 
 
-@router.post("/", response_model=Category)
+@router.post("", response_model=Category)
 async def create_category(
     *,
     current_user: User = Depends(get_current_active_user),

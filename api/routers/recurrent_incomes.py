@@ -16,7 +16,7 @@ router = APIRouter(
 CommonsDep = Annotated[dict, Depends(common_parameters)]
 
 
-@router.get("/", response_model=list[RecurrentIncome])
+@router.get("", response_model=list[RecurrentIncome])
 async def read_recurrent_incomes(
     commons: CommonsDep,
     current_user: User = Depends(get_current_active_user),
@@ -31,7 +31,7 @@ async def read_recurrent_incomes(
     return session.exec(stmt).all()
 
 
-@router.post("/", response_model=RecurrentIncome)
+@router.post("", response_model=RecurrentIncome)
 async def create_recurrent_income(
     *,
     current_user: User = Depends(get_current_active_user),

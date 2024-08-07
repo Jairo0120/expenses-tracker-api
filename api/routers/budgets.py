@@ -13,7 +13,7 @@ router = APIRouter(prefix="/budgets", tags=["Budgets"])
 CommonsDep = Annotated[dict, Depends(common_parameters)]
 
 
-@router.get("/", response_model=list[Budget])
+@router.get("", response_model=list[Budget])
 async def read_budgets(
     commons: CommonsDep,
     current_user: User = Depends(get_current_active_user),

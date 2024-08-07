@@ -18,13 +18,14 @@ router = APIRouter(
 CommonsDep = Annotated[dict, Depends(common_parameters)]
 
 
-@router.get("/", response_model=list[ExpensePublic])
+@router.get("", response_model=list[ExpensePublic])
 async def read_expenses(
     commons: CommonsDep,
     cycle_id: int | None = None,
     current_user: User = Depends(get_current_active_user),
     session: Session = Depends(get_session)
 ):
+    logger.info(f"Reading expenses for user {current_user.id}")
     cycle_stmt = (
         select(Cycle)
         .where(Cycle.user_id == current_user.id)
@@ -48,7 +49,7 @@ async def read_expenses(
     return session.exec(stmt).all()
 
 
-@router.post("/", response_model=ExpensePublic, status_code=201)
+@router.post("", response_model=ExpensePublic, status_code=201)
 async def create_expense(
     *,
     current_user: User = Depends(get_current_active_user),

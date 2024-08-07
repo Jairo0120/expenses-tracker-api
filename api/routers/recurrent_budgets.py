@@ -16,7 +16,7 @@ router = APIRouter(
 CommonsDep = Annotated[dict, Depends(common_parameters)]
 
 
-@router.get("/", response_model=list[RecurrentBudget])
+@router.get("", response_model=list[RecurrentBudget])
 async def read_recurrent_budgets(
     commons: CommonsDep,
     current_user: User = Depends(get_current_active_user),
@@ -31,7 +31,7 @@ async def read_recurrent_budgets(
     return session.exec(stmt).all()
 
 
-@router.post("/", response_model=RecurrentBudget)
+@router.post("", response_model=RecurrentBudget)
 async def create_recurrent_budget(
     *,
     current_user: User = Depends(get_current_active_user),
