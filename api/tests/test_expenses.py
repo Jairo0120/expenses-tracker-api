@@ -101,7 +101,7 @@ def test_create_expense(client: TestClient, expenses, cycles, budgets):
         "budget_id": 1
     }
     response = client.post('/expenses/', json=req_data)
-    assert response.status_code == 200
+    assert response.status_code == 201
     data = response.json()
     assert data['description'] == "Expense 4"
     assert data['val_expense'] == 400
