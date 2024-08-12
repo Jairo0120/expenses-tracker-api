@@ -10,6 +10,7 @@ from api.routers import (
     recurrent_budgets,
     expenses,
     budgets,
+    sandbox
 )
 from api.database import create_db_and_tables
 from api.log_config import LogConfig
@@ -45,6 +46,7 @@ app.include_router(recurrent_budgets.router)
 app.include_router(categories.router)
 app.include_router(expenses.router)
 app.include_router(budgets.router)
+app.include_router(sandbox.router)
 
 handler = Mangum(app, lifespan="on")
 
