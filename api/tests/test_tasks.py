@@ -125,6 +125,12 @@ def test_create_cycles_user_active(session: Session, users):
     assert cycles[0].user_id == 1
 
 
+def test_create_cycle_given_active_user(session: Session, users):
+    tasks.create_cycles(session, 3)
+    cycles = session.exec(select(Cycle)).all()
+    assert len(cycles) == 1
+
+
 @freeze_time("2024-02-01")
 def test_create_cycle_with_expired_cycle(session: Session, active_cycle):
     tasks.create_cycles(session)

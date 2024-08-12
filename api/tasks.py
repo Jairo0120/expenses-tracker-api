@@ -28,12 +28,14 @@ def get_session() -> Session:
         return db_session
 
 
-def create_cycles(session: Session):
+def create_cycles(session: Session, user_id: int = 0):
     """
-    Function that iterates over all  the active users and start creating new
-    cycles (if necessary) and disable old cycles
+    Function that iterates over all (or one) active users and start creating
+    new cycles (if necessary) and disable old cycles
     """
     statement = select(User).where(User.is_active == 1)
+    if user_id:
+        statement = statement.where(User.id == user_id)
     for user in session.exec(statement).all():
         current_cycle = session.exec(
             select(Cycle)

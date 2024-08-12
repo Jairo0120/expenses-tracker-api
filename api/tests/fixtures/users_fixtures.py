@@ -24,6 +24,16 @@ def users_fixture(session: Session):
         created_at=datetime(2024, 1, 1),
         updated_at=datetime(2024, 1, 1)
     )
+    active_user2 = User(
+        id=3,
+        email='test3@test.com',
+        name='Test3',
+        auth0_id='auth0|3',
+        is_active=True,
+        created_at=datetime(2024, 1, 1),
+        updated_at=datetime(2024, 1, 1)
+    )
     session.add(active_user)
     session.add(inactive_user)
+    session.add(active_user2)
     session.commit()
