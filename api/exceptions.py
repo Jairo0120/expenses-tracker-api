@@ -1,8 +1,13 @@
 from fastapi import HTTPException
+import logging
+
+
+logger = logging.getLogger("expenses-tracker")
 
 
 class IntegrityException(HTTPException):
     def __init__(self, status_code, detail, current_val):
+        logger.error(f"Integrity error: {detail}")
         errors = []
         for integrity_error in detail:
             field = integrity_error.split(' ')[-1].split('.')[-1]
