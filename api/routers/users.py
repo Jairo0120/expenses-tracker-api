@@ -37,7 +37,7 @@ async def create_user(
             session.refresh(db_user)
             new_user = db_user.model_copy()
             logger.info(f"User created: {new_user}. Creating cycles")
-            # create_cycles(session, db_user.id)
+            create_cycles(session, new_user.id)
             return new_user
         except IntegrityError as ex:
             raise IntegrityException(
