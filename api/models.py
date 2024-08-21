@@ -184,13 +184,28 @@ class RecurrentBudgetUpdate(SQLModel):
     is_enabled: bool | None = None
 
 
-class Income(BaseModel, table=True):
+class IncomeBase(SQLModel):
     description: str
     val_income: float
-    date_income: datetime
+    date_income: datetime = Field(default=datetime.now(), nullable=False)
+
+
+class Income(IncomeBase, BaseModel, table=True):
     is_recurrent_income: bool = False
     cycle_id: int = Field(foreign_key='cycle.id')
     cycle: Cycle = Relationship(back_populates="incomes")
+
+
+class IncomeCreate(IncomeBase):
+    cycle_id: int | None = None
+    create_recurrent_income: bool = False
+
+
+class IncomeUpdate(SQLModel):
+    description: str | None = None
+    val_income: float | None = None
+    date_income: datetime | None = None
+    cycle_id: int | None = None
 
 
 class ExpenseBase(SQLModel):
