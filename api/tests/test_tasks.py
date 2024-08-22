@@ -121,7 +121,7 @@ def recurrent_budgets_fixture(session: Session, users):
 def test_create_cycles_user_active(session: Session, users):
     tasks.create_cycles(session)
     cycles = session.exec(select(Cycle)).all()
-    assert len(cycles) == 1
+    assert len(cycles) == 2
     assert cycles[0].user_id == 1
 
 
@@ -135,7 +135,7 @@ def test_create_cycle_given_active_user(session: Session, users):
 def test_create_cycle_with_expired_cycle(session: Session, active_cycle):
     tasks.create_cycles(session)
     cycles = session.exec(select(Cycle).order_by(Cycle.id.asc())).all()
-    assert len(cycles) == 2
+    assert len(cycles) == 3
     assert cycles[0].is_active is False
 
 
@@ -145,7 +145,7 @@ def test_create_cycles_already_active_cycle(
 ):
     tasks.create_cycles(session)
     new_cycles = session.exec(select(Cycle)).all()
-    assert len(new_cycles) == 1
+    assert len(new_cycles) == 2
 
 
 def test_create_recurrent_incomes_active_cycle(
