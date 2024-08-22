@@ -23,7 +23,7 @@ CommonsDep = Annotated[dict, Depends(common_parameters)]
 
 
 @router.get("", response_model=list[Income])
-async def read_recurrent_incomes(
+async def read_incomes(
     commons: CommonsDep,
     cycle_id: int | None = None,
     current_user: User = Depends(get_current_active_user),
