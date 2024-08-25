@@ -234,6 +234,7 @@ class ExpensePublic(ExpenseBase):
     id: int
     budget: BudgetPublic | None = None
     cycle: CyclePublic
+    is_recurrent_expense: bool
 
 
 class ExpenseUpdate(SQLModel):
