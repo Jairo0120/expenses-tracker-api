@@ -247,13 +247,28 @@ class ExpenseUpdate(SQLModel):
     budget_id: int | None = None
 
 
-class Saving(BaseModel, table=True):
+class SavingBase(SQLModel):
     description: str
     val_saving: float
-    date_saving: datetime
+    date_saving: datetime = Field(default=datetime.now(), nullable=False)
+
+
+class Saving(SavingBase, BaseModel, table=True):
     is_recurrent_saving: bool = False
     cycle_id: int = Field(foreign_key='cycle.id')
     cycle: Cycle = Relationship(back_populates="savings")
+
+
+class SavingCreate(SavingBase):
+    cycle_id: int | None = None
+    create_recurrent_saving: bool = False
+
+
+class SavingUpdate(SQLModel):
+    description: str | None = None
+    val_saving: float | None = None
+    date_saving: datetime | None = None
+    cycle_id: int | None = None
 
 
 class SavingOutcome(BaseModel, table=True):

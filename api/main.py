@@ -12,6 +12,7 @@ from api.routers import (
     budgets,
     sandbox,
     incomes,
+    savings,
 )
 from api.database import create_db_and_tables
 from api.log_config import LogConfig
@@ -48,6 +49,7 @@ app.include_router(categories.router)
 app.include_router(expenses.router)
 app.include_router(budgets.router)
 app.include_router(incomes.router)
+app.include_router(savings.router)
 app.include_router(sandbox.router)
 
 handler = Mangum(app, lifespan="on")
