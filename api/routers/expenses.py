@@ -1,9 +1,18 @@
 from fastapi import APIRouter, Depends, HTTPException
 from api.dependencies import (
-    get_current_active_user, get_session, common_parameters
+    get_current_active_user,
+    get_session,
+    common_parameters,
 )
 from api.models import (
-    User, Expense, Cycle, ExpenseCreate, Budget, ExpensePublic, ExpenseUpdate
+    User,
+    Expense,
+    Cycle,
+    ExpenseCreate,
+    Budget,
+    ExpensePublic,
+    ExpenseUpdate,
+    RecurrentExpense,
 )
 from sqlmodel import Session, select
 from typing import Annotated
@@ -11,10 +20,7 @@ import logging
 
 
 logger = logging.getLogger("expenses-tracker")
-router = APIRouter(
-    prefix='/expenses',
-    tags=['Expenses']
-)
+router = APIRouter(prefix="/expenses", tags=["Expenses"])
 CommonsDep = Annotated[dict, Depends(common_parameters)]
 
 
@@ -23,13 +29,10 @@ async def read_expenses(
     commons: CommonsDep,
     cycle_id: int | None = None,
     current_user: User = Depends(get_current_active_user),
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
 ):
     logger.info(f"Reading expenses for user {current_user.id}")
-    cycle_stmt = (
-        select(Cycle)
-        .where(Cycle.user_id == current_user.id)
-    )
+    cycle_stmt = select(Cycle).where(Cycle.user_id == current_user.id)
     if cycle_id:
         cycle_stmt = cycle_stmt.where(Cycle.id == cycle_id)
     else:
@@ -37,14 +40,14 @@ async def read_expenses(
 
     cycle_db = session.exec(cycle_stmt).first()
     if not cycle_db:
-        raise HTTPException(status_code=404, detail='Cycle not found')
+        raise HTTPException(status_code=404, detail="Cycle not found")
 
     stmt = (
         select(Expense)
         .where(Expense.cycle_id == cycle_db.id)
         .order_by(Expense.date_expense.desc())
-        .offset(commons['skip'])
-        .limit(commons['limit'])
+        .offset(commons["skip"])
+        .limit(commons["limit"])
     )
     return session.exec(stmt).all()
 
@@ -54,13 +57,10 @@ async def create_expense(
     *,
     current_user: User = Depends(get_current_active_user),
     session: Session = Depends(get_session),
-    expense: ExpenseCreate
+    expense: ExpenseCreate,
 ):
     logger.info(f"Creating expense: {expense}")
-    cycle_stmt = (
-        select(Cycle)
-        .where(Cycle.user_id == current_user.id)
-    )
+    cycle_stmt = select(Cycle).where(Cycle.user_id == current_user.id)
     if expense.cycle_id:
         cycle_stmt = cycle_stmt.where(Cycle.id == expense.cycle_id)
     else:
@@ -69,7 +69,7 @@ async def create_expense(
     cycle_db = session.exec(cycle_stmt).first()
 
     if not cycle_db:
-        raise HTTPException(status_code=404, detail='Cycle not found')
+        raise HTTPException(status_code=404, detail="Cycle not found")
 
     if expense.budget_id:
         budget_stmt = (
@@ -78,18 +78,29 @@ async def create_expense(
             .where(Budget.cycle_id == cycle_db.id)
         )
         if not session.exec(budget_stmt).first():
-            raise HTTPException(status_code=404, detail='Budget not found')
+            raise HTTPException(status_code=404, detail="Budget not found")
 
     try:
+        if expense.create_recurrent_expense:
+            recurrent_expense = RecurrentExpense(
+                description=expense.description,
+                val_expense=expense.val_expense,
+                user_id=current_user.id or 0,
+            )
+            session.add(recurrent_expense)
         db_expense = Expense.model_validate(
             expense,
-            update={"user_id": current_user.id, "cycle_id": cycle_db.id}
+            update={
+                "user_id": current_user.id,
+                "cycle_id": cycle_db.id,
+                "is_recurrent_expense": expense.create_recurrent_expense,
+            },
         )
         session.add(db_expense)
         session.commit()
     except Exception as e:
         logger.error(f"Error creating expense: {e}")
-        raise HTTPException(status_code=500, detail='Error creating expense')
+        raise HTTPException(status_code=500, detail="Error creating expense")
 
     session.refresh(db_expense)
     return db_expense
@@ -101,15 +112,14 @@ def update_expense(
     current_user: User = Depends(get_current_active_user),
     session: Session = Depends(get_session),
     expense_id: int,
-    expense: ExpenseUpdate
+    expense: ExpenseUpdate,
 ):
     logger.info(f"Updating expense {expense_id}: {expense}")
     db_expense = session.exec(
-        select(Expense)
-        .where(Expense.id == expense_id)
+        select(Expense).where(Expense.id == expense_id)
     ).first()
     if not db_expense or db_expense.cycle.user_id != current_user.id:
-        raise HTTPException(status_code=404, detail='Expense not found')
+        raise HTTPException(status_code=404, detail="Expense not found")
 
     if expense.cycle_id:
         db_cycle = session.exec(
@@ -118,26 +128,25 @@ def update_expense(
             .where(Cycle.id == expense.cycle_id)
         ).first()
         if not db_cycle:
-            raise HTTPException(status_code=404, detail='Cycle not found')
+            raise HTTPException(status_code=404, detail="Cycle not found")
 
-    if (expense.budget_id
-       and expense.cycle_id
-       and expense.cycle_id == db_expense.cycle_id):
+    if (
+        expense.budget_id
+        and expense.cycle_id
+        and expense.cycle_id == db_expense.cycle_id
+    ):
         budget_stmt = (
             select(Budget)
             .where(Budget.id == expense.budget_id)
             .where(Budget.cycle_id == db_expense.cycle_id)
         )
         if not session.exec(budget_stmt).first():
-            raise HTTPException(status_code=404, detail='Budget not found')
-    expense_data = expense.model_dump(
-        exclude_unset=True,
-        exclude_none=True
-    )
+            raise HTTPException(status_code=404, detail="Budget not found")
+    expense_data = expense.model_dump(exclude_unset=True, exclude_none=True)
     # If the cycle has been updated, we need to remove the budget as this
     # could lead to data inconsistency
     if expense.cycle_id and expense.cycle_id != db_expense.cycle_id:
-        expense_data['budget_id'] = None
+        expense_data["budget_id"] = None
     db_expense.sqlmodel_update(expense_data)
     session.add(db_expense)
     session.commit()
@@ -150,15 +159,14 @@ def delete_expense(
     *,
     current_user: User = Depends(get_current_active_user),
     session: Session = Depends(get_session),
-    expense_id: int
+    expense_id: int,
 ):
     logger.info(f"Deleting expense {expense_id}")
     db_expense = session.exec(
-        select(Expense)
-        .where(Expense.id == expense_id)
+        select(Expense).where(Expense.id == expense_id)
     ).first()
     if not db_expense or db_expense.cycle.user_id != current_user.id:
-        raise HTTPException(status_code=404, detail='Expense not found')
+        raise HTTPException(status_code=404, detail="Expense not found")
 
     session.delete(db_expense)
     session.commit()

@@ -227,6 +227,7 @@ class Expense(ExpenseBase, BaseModel, table=True):
 class ExpenseCreate(ExpenseBase):
     cycle_id: int | None = None
     budget_id: int | None = None
+    create_recurrent_expense: bool = False
 
 
 class ExpensePublic(ExpenseBase):
