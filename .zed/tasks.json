@@ -1,0 +1,29 @@
+[
+  {
+    "label": "Run all tests",
+    "command": "poetry",
+    "args": ["run", "pytest", "-v"],
+    "use_new_terminal": false,
+    "reveal": "never",
+    "hide": "never",
+    "shell": "system"
+  },
+  {
+    "label": "Run file tests",
+    "command": "poetry",
+    "args": ["run", "pytest", "-v", "$ZED_FILE"],
+    "use_new_terminal": false,
+    "reveal": "never",
+    "hide": "never",
+    "shell": "system"
+  },
+  {
+    "label": "Run current test",
+    "command": "poetry",
+    "args": ["run", "pytest", "-v", "$ZED_FILE::$ZED_SYMBOL"],
+    "use_new_terminal": false,
+    "reveal": "never",
+    "hide": "never",
+    "shell": "system"
+  }
+]
