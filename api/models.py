@@ -41,24 +41,32 @@ class User(UserBase, table=True):
         back_populates="user"
     )
     cycles: list["Cycle"] = Relationship(back_populates="user")
+    saving_types: list["SavingType"] = Relationship(back_populates="user")
 
 
 class UserCreate(UserBase):
     pass
 
 
-class RecurrentSavingBase(SQLModel):
+class SavingType(BaseModel, table=True):
     description: str
+    user_id: int = Field(foreign_key='user.id')
+    user: User = Relationship(back_populates="saving_types")
+    savings: list["Saving"] = Relationship(back_populates="saving_type")
+    recurrent_savings: list["RecurrentSaving"] = \
+        Relationship(back_populates="saving_type")
+
+
+class RecurrentSavingBase(SQLModel):
     val_saving: float
     enabled: bool = True
 
 
 class RecurrentSaving(BaseModel, RecurrentSavingBase, table=True):
+    saving_type_id: int = Field(foreign_key='savingtype.id')
+    saving_type: SavingType = Relationship(back_populates="recurrent_savings")
     user_id: int = Field(foreign_key='user.id')
     user: User = Relationship(back_populates="recurrent_savings")
-    outcomes: list["SavingOutcome"] = Relationship(
-        back_populates="recurrent_saving"
-    )
 
 
 class RecurrentSavingUpdate(SQLModel):
@@ -68,7 +76,15 @@ class RecurrentSavingUpdate(SQLModel):
 
 
 class RecurrentSavingCreate(RecurrentSavingBase):
-    pass
+    description: str
+
+
+class RecurrentSavingPublic(SQLModel):
+    id: int
+    saving_type: SavingType
+    val_saving: float
+    enabled: bool
+    user_id: int
 
 
 class RecurrentExpenseBase(SQLModel):
@@ -248,13 +264,14 @@ class ExpenseUpdate(SQLModel):
 
 
 class SavingBase(SQLModel):
-    description: str
     val_saving: float
     date_saving: datetime = Field(default=datetime.now(), nullable=False)
 
 
 class Saving(SavingBase, BaseModel, table=True):
     is_recurrent_saving: bool = False
+    saving_type_id: int = Field(foreign_key='savingtype.id')
+    saving_type: SavingType = Relationship(back_populates="savings")
     cycle_id: int = Field(foreign_key='cycle.id')
     cycle: Cycle = Relationship(back_populates="savings")
 
@@ -271,10 +288,7 @@ class SavingUpdate(SQLModel):
     cycle_id: int | None = None
 
 
-class SavingOutcome(BaseModel, table=True):
+class SavingPublic(SQLModel):
     description: str
-    val_outcome: float
-    date_outcome: datetime
-    source: SourceEnum
-    recurrent_saving_id: int = Field(foreign_key='recurrentsaving.id')
-    recurrent_saving: RecurrentSaving = Relationship(back_populates='outcomes')
+    total_savings: float
+    last_saving: datetime

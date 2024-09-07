@@ -1,28 +1,51 @@
 from sqlmodel import Session
 from fastapi.testclient import TestClient
-from ..models import RecurrentSaving
+from ..models import RecurrentSaving, SavingType
 import pytest
 
 
+@pytest.fixture(name="saving_types")
+def saving_types_fixture(session: Session):
+    saving_type_1 = SavingType(
+        id=1,
+        description="Saving 1",
+        user_id=1
+    )
+    saving_type_2 = SavingType(
+        id=2,
+        description="Saving 2",
+        user_id=1
+    )
+    saving_type_3 = SavingType(
+        id=3,
+        description="Saving 3",
+        user_id=2
+    )
+    session.add(saving_type_1)
+    session.add(saving_type_2)
+    session.add(saving_type_3)
+    session.commit()
+
+
 @pytest.fixture(name='recurrent_savings')
-def recurrent_saving_fixtures(session: Session):
+def recurrent_saving_fixtures(session: Session, saving_types):
     recurrent_saving_1 = RecurrentSaving(
         id=1,
-        description='Saving 1',
         val_saving=100,
-        user_id=1
+        user_id=1,
+        saving_type_id=1
     )
     recurrent_saving_2 = RecurrentSaving(
         id=2,
-        description='Saving 2',
         val_saving=20000,
-        user_id=1
+        user_id=1,
+        saving_type_id=2
     )
     recurrent_saving_3 = RecurrentSaving(
         id=3,
-        description='Saving 3',
         val_saving=3994,
-        user_id=2
+        user_id=2,
+        saving_type_id=3
     )
     session.add(recurrent_saving_1)
     session.add(recurrent_saving_2)
@@ -46,7 +69,7 @@ def test_new_recurrent_saving_created(client: TestClient, recurrent_savings):
     response = client.post("/recurrent_savings/", json=req_data)
     resp_data = response.json()
     assert response.status_code == 200
-    assert resp_data['description'] == "RE 1"
+    assert resp_data["saving_type"]['description'] == "Re 1"
     assert resp_data['user_id'] == 1
 
 
@@ -83,7 +106,7 @@ def test_update_recurrent_saving_other_empty_values(
     response = client.patch("/recurrent_savings/2", json=req_data)
     data = response.json()
     assert response.status_code == 200
-    assert data['description'] == "Saving 2"
+    assert data["saving_type"]['description'] == "Saving 2"
     assert data['val_saving'] == 20000
 
 
@@ -121,6 +144,6 @@ def test_get_single_recurrent_saving_ok(
     response = client.get("/recurrent_savings/1")
     data = response.json()
     assert response.status_code == 200
-    assert data['description'] == "Saving 1"
+    assert data["saving_type"]['description'] == "Saving 1"
     assert data['val_saving'] == 100
     assert data['user_id'] == 1
