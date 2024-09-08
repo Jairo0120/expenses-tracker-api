@@ -59,18 +59,24 @@ async def read_grouped_savings(
 ):
     logger.info(f"Reading grouped savings for user {current_user.id}")
     stmt = text(
-        f"""select st.description,
+        f"""select max(s.id) as id,
+                st.description,
+                max(s.is_recurrent_saving) as is_recurrent_saving,
                 sum(case s.movement_type
                     when 'outcome' then s.val_saving * -1
-                    else s.val_saving * 1 end) as total,
+                    else s.val_saving * 1 end) as total_global,
+                sum(case
+                    when c.is_active == 1 then s.val_saving
+                    else 0 end) as total_last_month,
                 max(case s.movement_type
                     when 'income' then s.date_saving
                     else null end) as last_saving
             from saving s
             join savingtype st on s.saving_type_id = st.id
+            join cycle c on s.cycle_id = c.id
             where st.user_id = {str(current_user.id)}
             group by st.description
-            order by 3 desc"""
+            order by 6 desc"""
     )
     return session.exec(stmt).all()
 

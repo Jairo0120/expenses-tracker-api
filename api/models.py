@@ -315,6 +315,9 @@ class SavingPublic(SQLModel):
 
 
 class GroupedSavings(SQLModel):
+    id: int
     description: str
-    total: float
+    is_recurrent_saving: bool
+    total_global: float
+    total_last_month: float
     last_saving: datetime
