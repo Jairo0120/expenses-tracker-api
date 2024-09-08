@@ -277,6 +277,7 @@ class Saving(SavingBase, BaseModel, table=True):
 
 
 class SavingCreate(SavingBase):
+    description: str
     cycle_id: int | None = None
     create_recurrent_saving: bool = False
 
@@ -289,6 +290,8 @@ class SavingUpdate(SQLModel):
 
 
 class SavingPublic(SQLModel):
-    description: str
-    total_savings: float
-    last_saving: datetime
+    id: int
+    val_saving: float
+    date_saving: datetime
+    is_recurrent_saving: bool
+    saving_type: SavingType

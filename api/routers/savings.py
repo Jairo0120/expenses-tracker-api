@@ -11,6 +11,8 @@ from api.models import (
     Cycle,
     SavingCreate,
     SavingUpdate,
+    SavingPublic,
+    SavingType,
 )
 from sqlmodel import Session, select
 from typing import Annotated
@@ -22,7 +24,7 @@ router = APIRouter(prefix="/savings", tags=["Savings"])
 CommonsDep = Annotated[dict, Depends(common_parameters)]
 
 
-@router.get("", response_model=list[Saving])
+@router.get("", response_model=list[SavingPublic])
 async def read_savings(
     commons: CommonsDep,
     cycle_id: int | None = None,
@@ -46,7 +48,7 @@ async def read_savings(
     return session.exec(stmt).all()
 
 
-@router.post("", response_model=Saving, status_code=201)
+@router.post("", response_model=SavingPublic, status_code=201)
 async def create_saving(
     *,
     current_user: User = Depends(get_current_active_user),
@@ -66,19 +68,29 @@ async def create_saving(
         raise HTTPException(status_code=404, detail="Cycle not found")
 
     try:
+        saving_type = session.exec(
+            select(SavingType).where(
+                SavingType.description == saving.description.capitalize()
+            )
+        ).first()
+        if not saving_type:
+            saving_type = SavingType(
+                description=saving.description.capitalize(),
+                user_id=current_user.id or 0
+            )
         if saving.create_recurrent_saving:
             recurrent_saving = RecurrentSaving(
-                description=saving.description,
                 val_saving=saving.val_saving,
                 user_id=current_user.id or 0,
+                saving_type=saving_type
             )
             session.add(recurrent_saving)
-        db_saving = Saving.model_validate(
-            saving,
-            update={
-                "cycle_id": cycle_db.id,
-                "is_recurrent_saving": saving.create_recurrent_saving,
-            },
+        db_saving = Saving(
+            val_saving=saving.val_saving,
+            date_saving=saving.date_saving,
+            cycle=cycle_db,
+            is_recurrent_saving=saving.create_recurrent_saving,
+            saving_type=saving_type,
         )
         session.add(db_saving)
         session.commit()
@@ -89,7 +101,7 @@ async def create_saving(
     return db_saving
 
 
-@router.patch("/{saving_id}", response_model=Saving)
+@router.patch("/{saving_id}", response_model=SavingPublic)
 async def update_saving(
     saving_id: int,
     saving: SavingUpdate,
@@ -97,8 +109,7 @@ async def update_saving(
     session: Session = Depends(get_session),
 ):
     logger.info(f"Updating saving: {saving}")
-    stmt = select(Saving).where(Saving.id == saving_id)
-    db_saving = session.exec(stmt).first()
+    db_saving = session.get(Saving, saving_id)
     if not db_saving or db_saving.cycle.user_id != current_user.id:
         raise HTTPException(status_code=404, detail="Saving not found")
     if saving.cycle_id:
@@ -111,6 +122,11 @@ async def update_saving(
             raise HTTPException(status_code=404, detail="Cycle not found")
     try:
         saving_data = saving.model_dump(exclude_unset=True, exclude_none=True)
+        if new_description := saving_data.get("description"):
+            saving_type = session.get(SavingType, db_saving.saving_type_id)
+            saving_type.description = new_description
+            session.add(saving_type)
+        saving_data.pop("description", None)
         db_saving.sqlmodel_update(saving_data)
         session.add(db_saving)
         session.commit()
