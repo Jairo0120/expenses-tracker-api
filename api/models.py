@@ -312,3 +312,9 @@ class SavingPublic(SQLModel):
     movement_type: SavingMovementEnum
     movement_description: str
     saving_type: SavingType
+
+
+class GroupedSavings(SQLModel):
+    description: str
+    total: float
+    last_saving: datetime

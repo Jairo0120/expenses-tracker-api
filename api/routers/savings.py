@@ -15,8 +15,9 @@ from api.models import (
     SavingType,
     SavingOutcomeCreate,
     SavingMovementEnum,
+    GroupedSavings,
 )
-from sqlmodel import Session, select
+from sqlmodel import Session, select, text
 from typing import Annotated
 import logging
 
@@ -47,6 +48,29 @@ async def read_savings(
         .order_by(Saving.created_at.desc())
         .offset(commons["skip"])
         .limit(commons["limit"])
+    )
+    return session.exec(stmt).all()
+
+
+@router.get("/grouped-savings", response_model=list[GroupedSavings])
+async def read_grouped_savings(
+    current_user: User = Depends(get_current_active_user),
+    session: Session = Depends(get_session),
+):
+    logger.info(f"Reading grouped savings for user {current_user.id}")
+    stmt = text(
+        f"""select st.description,
+                sum(case s.movement_type
+                    when 'outcome' then s.val_saving * -1
+                    else s.val_saving * 1 end) as total,
+                max(case s.movement_type
+                    when 'income' then s.date_saving
+                    else null end) as last_saving
+            from saving s
+            join savingtype st on s.saving_type_id = st.id
+            where st.user_id = {str(current_user.id)}
+            group by st.description
+            order by 3 desc"""
     )
     return session.exec(stmt).all()
 
