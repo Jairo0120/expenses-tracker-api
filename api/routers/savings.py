@@ -13,6 +13,8 @@ from api.models import (
     SavingUpdate,
     SavingPublic,
     SavingType,
+    SavingOutcomeCreate,
+    SavingMovementEnum,
 )
 from sqlmodel import Session, select
 from typing import Annotated
@@ -41,6 +43,7 @@ async def read_savings(
     stmt = (
         select(Saving)
         .where(Saving.cycle_id == cycle_db.id)
+        .where(Saving.movement_type == SavingMovementEnum.income)
         .order_by(Saving.created_at.desc())
         .offset(commons["skip"])
         .limit(commons["limit"])
@@ -76,13 +79,13 @@ async def create_saving(
         if not saving_type:
             saving_type = SavingType(
                 description=saving.description.capitalize(),
-                user_id=current_user.id or 0
+                user_id=current_user.id or 0,
             )
         if saving.create_recurrent_saving:
             recurrent_saving = RecurrentSaving(
                 val_saving=saving.val_saving,
                 user_id=current_user.id or 0,
-                saving_type=saving_type
+                saving_type=saving_type,
             )
             session.add(recurrent_saving)
         db_saving = Saving(
@@ -97,6 +100,54 @@ async def create_saving(
     except Exception as e:
         logger.error(f"Error creating saving: {e}")
         raise HTTPException(status_code=500, detail="Error creating saving")
+    session.refresh(db_saving)
+    return db_saving
+
+
+@router.post("/saving-outcome", response_model=SavingPublic, status_code=201)
+async def create_saving_outcome(
+    *,
+    current_user: User = Depends(get_current_active_user),
+    session: Session = Depends(get_session),
+    saving_outcome: SavingOutcomeCreate,
+):
+    logger.info(f"Creating saving outcome: {saving_outcome}")
+    cycle_stmt = select(Cycle).where(Cycle.user_id == current_user.id)
+    if saving_outcome.cycle_id:
+        cycle_stmt = cycle_stmt.where(Cycle.id == saving_outcome.cycle_id)
+    else:
+        cycle_stmt = cycle_stmt.where(Cycle.is_active == 1)
+
+    cycle_db = session.exec(cycle_stmt).first()
+
+    if not cycle_db:
+        raise HTTPException(status_code=404, detail="Cycle not found")
+
+    saving_type = session.exec(
+        select(SavingType).where(
+            SavingType.description == saving_outcome.saving.capitalize()
+        )
+    ).first()
+    if not saving_type:
+        raise HTTPException(status_code=404, detail="Saving not found")
+
+    try:
+        db_saving = Saving(
+            val_saving=saving_outcome.val_outcome,
+            date_saving=saving_outcome.date_outcome,
+            cycle=cycle_db,
+            is_recurrent_saving=False,
+            saving_type=saving_type,
+            movement_type=SavingMovementEnum.outcome,
+            movement_description=saving_outcome.description,
+        )
+        session.add(db_saving)
+        session.commit()
+    except Exception as e:
+        logger.error(f"Error creating saving outcome: {e}")
+        raise HTTPException(
+            status_code=500, detail="Error creating saving outcome"
+        )
     session.refresh(db_saving)
     return db_saving
 

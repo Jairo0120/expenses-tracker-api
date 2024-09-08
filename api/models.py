@@ -11,6 +11,11 @@ class SourceEnum(str, Enum):
     recurrent = "Recurrent"
 
 
+class SavingMovementEnum(str, Enum):
+    income = "Income"
+    outcome = "Outcome"
+
+
 class BaseModel(SQLModel):
     id: int | None = Field(default=None, primary_key=True)
     created_at: datetime = Field(default_factory=datetime.now, nullable=False)
@@ -266,6 +271,8 @@ class ExpenseUpdate(SQLModel):
 class SavingBase(SQLModel):
     val_saving: float
     date_saving: datetime = Field(default=datetime.now(), nullable=False)
+    movement_type: SavingMovementEnum = SavingMovementEnum.income
+    movement_description: str = ''
 
 
 class Saving(SavingBase, BaseModel, table=True):
@@ -282,6 +289,14 @@ class SavingCreate(SavingBase):
     create_recurrent_saving: bool = False
 
 
+class SavingOutcomeCreate(SQLModel):
+    saving: str
+    val_outcome: float
+    date_outcome: datetime = Field(default=datetime.now(), nullable=False)
+    description: str
+    cycle_id: int | None = None
+
+
 class SavingUpdate(SQLModel):
     description: str | None = None
     val_saving: float | None = None
@@ -294,4 +309,6 @@ class SavingPublic(SQLModel):
     val_saving: float
     date_saving: datetime
     is_recurrent_saving: bool
+    movement_type: SavingMovementEnum
+    movement_description: str
     saving_type: SavingType
