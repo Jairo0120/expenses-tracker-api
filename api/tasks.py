@@ -140,11 +140,11 @@ def create_recurrent_savings(session: Session):
         )
         for re_saving in session.exec(recurrent_savings_stmt):
             saving = Saving(
-                description=re_saving.description,
                 val_saving=re_saving.val_saving,
                 date_saving=datetime.now(),
                 is_recurrent_saving=True,
-                cycle_id=cycle.id or 0
+                cycle_id=cycle.id or 0,
+                saving_type_id=re_saving.saving_type_id
             )
             session.add(saving)
         cycle.is_recurrent_savings_created = True

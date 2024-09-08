@@ -4,7 +4,7 @@ from freezegun import freeze_time
 from .. import tasks
 from ..models import (
     Cycle, Income, RecurrentIncome, RecurrentExpense, RecurrentSaving,
-    Expense, Saving, RecurrentBudget, Budget
+    Expense, Saving, RecurrentBudget, Budget, SavingType
 )
 import pytest
 
@@ -55,6 +55,29 @@ def recurrent_incomes_fixture(session: Session, users):
     session.commit()
 
 
+@pytest.fixture(name="saving_types")
+def saving_types_fixture(session: Session):
+    saving_type_1 = SavingType(
+        id=1,
+        description="Saving 1",
+        user_id=1
+    )
+    saving_type_2 = SavingType(
+        id=2,
+        description="Saving 2",
+        user_id=1
+    )
+    saving_type_3 = SavingType(
+        id=3,
+        description="Saving 3",
+        user_id=2
+    )
+    session.add(saving_type_1)
+    session.add(saving_type_2)
+    session.add(saving_type_3)
+    session.commit()
+
+
 @pytest.fixture(name='recurrent_expenses')
 def recurrent_expenses_fixture(session: Session, users):
     recurrent_expense_1 = RecurrentExpense(
@@ -77,20 +100,20 @@ def recurrent_expenses_fixture(session: Session, users):
 
 
 @pytest.fixture(name='recurrent_savings')
-def recurrent_savings_fixture(session: Session, users):
+def recurrent_savings_fixture(session: Session, users, saving_types):
     recurrent_saving_1 = RecurrentSaving(
-        description='saving 1',
         val_saving=1000,
         user_id=1,
         created_at=datetime(2024, 1, 1),
-        updated_at=datetime(2024, 1, 1)
+        updated_at=datetime(2024, 1, 1),
+        saving_type_id=1
     )
     recurrent_saving_2 = RecurrentSaving(
-        description='saving 2',
         val_saving=40000,
         user_id=1,
         created_at=datetime(2024, 1, 1),
-        updated_at=datetime(2024, 1, 1)
+        updated_at=datetime(2024, 1, 1),
+        saving_type_id=2
     )
     session.add(recurrent_saving_1)
     session.add(recurrent_saving_2)
