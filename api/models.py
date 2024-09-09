@@ -62,6 +62,11 @@ class SavingType(BaseModel, table=True):
         Relationship(back_populates="saving_type")
 
 
+class SavingTypePublic(SQLModel):
+    id: int
+    description: str
+
+
 class RecurrentSavingBase(SQLModel):
     val_saving: float
     enabled: bool = True
@@ -311,7 +316,8 @@ class SavingPublic(SQLModel):
     is_recurrent_saving: bool
     movement_type: SavingMovementEnum
     movement_description: str
-    saving_type: SavingType
+    saving_type: SavingTypePublic
+    cycle: CyclePublic
 
 
 class GroupedSavings(SQLModel):
