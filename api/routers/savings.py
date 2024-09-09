@@ -115,12 +115,18 @@ async def create_saving(
                 user_id=current_user.id or 0,
             )
         if saving.create_recurrent_saving:
-            recurrent_saving = RecurrentSaving(
-                val_saving=saving.val_saving,
-                user_id=current_user.id or 0,
-                saving_type=saving_type,
-            )
-            session.add(recurrent_saving)
+            existent_recurrent_saving = session.exec(
+                select(RecurrentSaving)
+                .where(RecurrentSaving.user_id == current_user.id)
+                .where(RecurrentSaving.saving_type_id == saving_type.id)
+            ).first()
+            if not existent_recurrent_saving:
+                recurrent_saving = RecurrentSaving(
+                    val_saving=saving.val_saving,
+                    user_id=current_user.id or 0,
+                    saving_type=saving_type,
+                )
+                session.add(recurrent_saving)
         db_saving = Saving(
             val_saving=saving.val_saving,
             date_saving=saving.date_saving,

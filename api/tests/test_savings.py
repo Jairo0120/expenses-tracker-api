@@ -136,6 +136,35 @@ def test_create_saving_with_recurrent_saving(
     assert recurrent_saving[0].saving_type.description == "Saving 7"
 
 
+def test_create_saving_with_with_existing_recurrent_saving(
+    client: TestClient, cycles, session
+):
+    response = client.post(
+        "/savings/",
+        json={
+            "description": "Saving 8",
+            "val_saving": 800,
+            "create_recurrent_saving": True,
+        },
+    )
+    response = client.post(
+        "/savings/",
+        json={
+            "description": "Saving 8",
+            "val_saving": 800,
+            "create_recurrent_saving": True,
+        },
+    )
+    recurrent_saving = session.exec(
+        select(RecurrentSaving).where(RecurrentSaving.user_id == 1)
+    ).all()
+    assert response.status_code == 201
+    assert response.json()["saving_type"]["description"] == "Saving 8"
+    assert response.json()["is_recurrent_saving"] is True
+    assert len(recurrent_saving) == 1
+    assert recurrent_saving[0].saving_type.description == "Saving 8"
+
+
 def test_update_saving(client: TestClient, savings, cycles):
     response = client.patch(
         "/savings/1",
