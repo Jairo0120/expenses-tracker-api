@@ -30,11 +30,12 @@ async def read_recurrent_savings(
         .where(RecurrentSaving.user_id == current_user.id)
         .offset(commons['skip'])
         .limit(commons['limit'])
+        .order_by(RecurrentSaving.created_at.desc())
     )
     return session.exec(stmt).all()
 
 
-@router.post("", response_model=RecurrentSavingPublic)
+@router.post("", response_model=RecurrentSavingPublic, status_code=201)
 async def create_recurrent_saving(
     *,
     current_user: User = Depends(get_current_active_user),

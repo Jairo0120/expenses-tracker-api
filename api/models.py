@@ -91,10 +91,11 @@ class RecurrentSavingCreate(RecurrentSavingBase):
 
 class RecurrentSavingPublic(SQLModel):
     id: int
-    saving_type: SavingType
+    saving_type: SavingTypePublic
     val_saving: float
     enabled: bool
     user_id: int
+    created_at: datetime
 
 
 class RecurrentExpenseBase(SQLModel):

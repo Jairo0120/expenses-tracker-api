@@ -68,7 +68,7 @@ def test_new_recurrent_saving_created(client: TestClient, recurrent_savings):
     }
     response = client.post("/recurrent_savings/", json=req_data)
     resp_data = response.json()
-    assert response.status_code == 200
+    assert response.status_code == 201
     assert resp_data["saving_type"]['description'] == "Re 1"
     assert resp_data['user_id'] == 1
 
