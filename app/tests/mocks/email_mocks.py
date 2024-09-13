@@ -3,10 +3,10 @@ BAD_EMAIL = '''
     (1803:20b8:312:1-9::9)by XXXXXXXXXX.namprd06.prod.outlook.com
     with HTTPS; Thu, 23 Feb 202301:14:04 +0000\r\nReceived: from
     XXXXXXXXXXXX.namprd14.prod.outlook.com (1111:22222:5:19l::19)
-    n d=***REMOVED***;h=From:To:Subject:Date:List
+    n d=communications.example.com;h=From:To:Subject:Date:List
     : 0\r\nX-EOPTenantAttributedMessage: 84df9e7f-e9f6-40af-b435-aa
     lEKzlldkEwenlQM0Ru?==?utf-8?B?ZXhJekpFSnBWRVdReG1odURVREZ3NVpY
-    .lifemiles.com/?qs=0a659d55eb3bdc9c25e0767f9e8b3026e1e234a6882f94f81bd2e
+    .example.com/?qs=0a659d55eb3bdc9c25e0767f9e8b3026e1e234a6882f94f81bd2e
     body/eight: auto !important;margin-left: auto !i
     html>; }.mobile-hidden { display:n !important; }logo { d
     </html>
@@ -17,10 +17,10 @@ MISSING_HTML_BODY_EMAIL = '''
     (1803:20b8:312:1-9::9)by XXXXXXXXXX.namprd06.prod.outlook.com
     with HTTPS; Thu, 23 Feb 202301:14:04 +0000\r\nReceived: from
     XXXXXXXXXXXX.namprd14.prod.outlook.com (1111:22222:5:19l::19)
-    n d=***REMOVED***;h=From:To:Subject:Date:List
+    n d=communications.example.com;h=From:To:Subject:Date:List
     : 0\r\nX-EOPTenantAttributedMessage: 84df9e7f-e9f6-40af-b435-aa
     lEKzlldkEwenlQM0Ru?==?utf-8?B?ZXhJekpFSnBWRVdReG1odURVREZ3NVpY
-    .lifemiles.com/?qs=0a659d55eb3bdc9c25e0767f9e8b3026e1e234a6882f94f81bd2e
+    .example.com/?qs=0a659d55eb3bdc9c25e0767f9e8b3026e1e234a6882f94f81bd2e
     body/eight: auto !important;margin-left: auto !i
     html>; }.mobile-hidden { display:n !important; }logo { d
     </html>
@@ -35,10 +35,10 @@ GOOD_EMPTY_EMAIL = '''
     (1803:20b8:312:1-9::9)by XXXXXXXXXX.namprd06.prod.outlook.com
     with HTTPS; Thu, 23 Feb 202301:14:04 +0000\r\nReceived: from
     XXXXXXXXXXXX.namprd14.prod.outlook.com (1111:22222:5:19l::19)
-    n d=***REMOVED***;h=From:To:Subject:Date:List
+    n d=communications.example.com;h=From:To:Subject:Date:List
     : 0\r\nX-EOPTenantAttributedMessage: 84df9e7f-e9f6-40af-b435-aa
     lEKzlldkEwenlQM0Ru?==?utf-8?B?ZXhJekpFSnBWRVdReG1odURVREZ3NVpY
-    .lifemiles.com/?qs=0a659d55eb3bdc9c25e0767f9e8b3026e1e234a6882f94f81bd2e
+    .example.com/?qs=0a659d55eb3bdc9c25e0767f9e8b3026e1e234a6882f94f81bd2e
     body/eight: auto !important;margin-left: auto !i
     html>; }.mobile-hidden { display:n !important; }logo { d
     <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
@@ -65,10 +65,10 @@ INCOMPLETE_HTML_EMAIL = '''
     (1803:20b8:312:1-9::9)by XXXXXXXXXX.namprd06.prod.outlook.com
     with HTTPS; Thu, 23 Feb 202301:14:04 +0000\r\nReceived: from
     XXXXXXXXXXXX.namprd14.prod.outlook.com (1111:22222:5:19l::19)
-    n d=***REMOVED***;h=From:To:Subject:Date:List
+    n d=communications.example.com;h=From:To:Subject:Date:List
     : 0\r\nX-EOPTenantAttributedMessage: 84df9e7f-e9f6-40af-b435-aa
     lEKzlldkEwenlQM0Ru?==?utf-8?B?ZXhJekpFSnBWRVdReG1odURVREZ3NVpY
-    .lifemiles.com/?qs=0a659d55eb3bdc9c25e0767f9e8b3026e1e234a6882f94f81bd2e
+    .example.com/?qs=0a659d55eb3bdc9c25e0767f9e8b3026e1e234a6882f94f81bd2e
     body/eight: auto !important;margin-left: auto !i
     html>; }.mobile-hidden { display:n !important; }logo { d
     <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
@@ -104,10 +104,10 @@ GOOD_FULL_EMAIL = '''
     (1803:20b8:312:1-9::9)by XXXXXXXXXX.namprd06.prod.outlook.com
     with HTTPS; Thu, 23 Feb 202301:14:04 +0000\r\nReceived: from
     XXXXXXXXXXXX.namprd14.prod.outlook.com (1111:22222:5:19l::19)
-    n d=***REMOVED***;h=From:To:Subject:Date:List
+    n d=communications.example.com;h=From:To:Subject:Date:List
     : 0\r\nX-EOPTenantAttributedMessage: 84df9e7f-e9f6-40af-b435-aa
     lEKzlldkEwenlQM0Ru?==?utf-8?B?ZXhJekpFSnBWRVdReG1odURVREZ3NVpY
-    .lifemiles.com/?qs=0a659d55eb3bdc9c25e0767f9e8b3026e1e234a6882f94f81bd2e
+    .example.com/?qs=0a659d55eb3bdc9c25e0767f9e8b3026e1e234a6882f94f81bd2e
     body/eight: auto !important;margin-left: auto !i
     html>; }.mobile-hidden { display:n !important; }logo { d
     <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
