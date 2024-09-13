@@ -27,11 +27,12 @@ async def read_recurrent_incomes(
         .where(RecurrentIncome.user_id == current_user.id)
         .offset(commons['skip'])
         .limit(commons['limit'])
+        .order_by(RecurrentIncome.created_at.desc())
     )
     return session.exec(stmt).all()
 
 
-@router.post("", response_model=RecurrentIncome)
+@router.post("", response_model=RecurrentIncome, status_code=201)
 async def create_recurrent_income(
     *,
     current_user: User = Depends(get_current_active_user),
