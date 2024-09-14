@@ -27,11 +27,12 @@ async def read_recurrent_expenses(
         .where(RecurrentExpense.user_id == current_user.id)
         .offset(commons['skip'])
         .limit(commons['limit'])
+        .order_by(RecurrentExpense.created_at.desc())
     )
     return session.exec(stmt).all()
 
 
-@router.post("", response_model=RecurrentExpense)
+@router.post("", response_model=RecurrentExpense, status_code=201)
 async def create_recurrent_expense(
     *,
     current_user: User = Depends(get_current_active_user),

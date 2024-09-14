@@ -46,7 +46,7 @@ def test_new_recurrent_expense_created(client: TestClient, recurrent_expenses):
     }
     response = client.post("/recurrent_expenses/", json=req_data)
     resp_data = response.json()
-    assert response.status_code == 200
+    assert response.status_code == 201
     assert resp_data['description'] == "RE 1"
     assert resp_data['user_id'] == 1
 
