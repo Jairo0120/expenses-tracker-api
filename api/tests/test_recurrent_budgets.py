@@ -1,6 +1,7 @@
-from sqlmodel import Session
+from sqlmodel import Session, select
 from fastapi.testclient import TestClient
-from ..models import RecurrentBudget
+from datetime import datetime
+from ..models import RecurrentBudget, Budget, Cycle
 import pytest
 
 
@@ -30,6 +31,29 @@ def recurrent_budget_fixtures(session: Session):
     session.commit()
 
 
+@pytest.fixture(name="cycles")
+def cycle_fixture(session: Session):
+    cycle_1 = Cycle(
+        id=1,
+        description="Cycle 1",
+        start_date=datetime(2021, 1, 1),
+        end_date=datetime(2021, 1, 31),
+        is_active=True,
+        user_id=1,
+    )
+    cycle_2 = Cycle(
+        id=2,
+        description="Cycle 2",
+        start_date=datetime(2021, 2, 1),
+        end_date=datetime(2021, 2, 28),
+        is_active=False,
+        user_id=1,
+    )
+    session.add(cycle_1)
+    session.add(cycle_2)
+    session.commit()
+
+
 def test_read_recurrent_budgets_ok(client: TestClient, recurrent_budgets):
     response = client.get("/recurrent_budgets/")
     data = response.json()
@@ -38,16 +62,21 @@ def test_read_recurrent_budgets_ok(client: TestClient, recurrent_budgets):
     assert len(data) == 2
 
 
-def test_new_recurrent_budget_created(client: TestClient, recurrent_budgets):
+def test_new_recurrent_budget_created(client: TestClient, recurrent_budgets,
+                                      cycles, session):
     req_data = {
         "description": "RE 1",
         "val_budget": 100,
     }
     response = client.post("/recurrent_budgets/", json=req_data)
     resp_data = response.json()
+    budget = session.exec(
+        select(Budget).where(Budget.description == "RE 1")
+    ).first()
     assert response.status_code == 201
     assert resp_data['description'] == "RE 1"
     assert resp_data['user_id'] == 1
+    assert budget.description == "RE 1"
 
 
 def test_create_recurrent_budget_incomplete_data(

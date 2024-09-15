@@ -3,10 +3,15 @@ from api.dependencies import (
     get_current_active_user, get_session, common_parameters
 )
 from api.models import (
-    User, RecurrentBudget, RecurrentBudgetCreate, RecurrentBudgetUpdate
+    User, RecurrentBudget, RecurrentBudgetCreate, RecurrentBudgetUpdate,
+    Budget, Cycle
 )
 from sqlmodel import Session, select
 from typing import Annotated
+import logging
+
+
+logger = logging.getLogger("expenses-tracker")
 
 
 router = APIRouter(
@@ -39,11 +44,24 @@ async def create_recurrent_budget(
     session: Session = Depends(get_session),
     recurrent_budget: RecurrentBudgetCreate
 ):
+    logger.info(f"Creating recurrent budget for user {current_user.id}")
     db_recurrent_budget = RecurrentBudget.model_validate(
         recurrent_budget,
         update={"user_id": current_user.id}
     )
     session.add(db_recurrent_budget)
+    current_cycle = session.exec(
+        select(Cycle)
+        .where(Cycle.is_active)
+        .where(Cycle.user_id == current_user.id)
+    ).first()
+    if current_cycle:
+        budget = Budget(
+            description=db_recurrent_budget.description,
+            val_budget=db_recurrent_budget.val_budget,
+            cycle=current_cycle
+        )
+        session.add(budget)
     session.commit()
     session.refresh(db_recurrent_budget)
     return db_recurrent_budget
