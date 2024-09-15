@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from api.dependencies import (
     get_current_active_user,
     get_session,
@@ -28,3 +28,20 @@ async def read_budgets(
         .limit(commons["limit"])
     )
     return session.exec(stmt).all()
+
+
+@router.delete("/{budget_id}", status_code=200)
+async def delete_budget(
+    budget_id: int,
+    current_user: User = Depends(get_current_active_user),
+    session: Session = Depends(get_session),
+):
+    budget = session.get(Budget, budget_id)
+    if not budget:
+        raise HTTPException(status_code=404, detail="Budget not found")
+    cycle = session.get(Cycle, budget.cycle_id)
+    if cycle.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Budget not found")
+    session.delete(budget)
+    session.commit()
+    return {"ok": True}

@@ -54,6 +54,25 @@ def cycle_fixture(session: Session):
     session.commit()
 
 
+@pytest.fixture(name="budgets")
+def budget_fixture(cycles, session: Session):
+    budget = Budget(
+        id=1,
+        description="Budget 1",
+        val_budget=100,
+        cycle_id=1
+    )
+    budget2 = Budget(
+        id=2,
+        description="Budget 2",
+        val_budget=100,
+        cycle_id=1
+    )
+    session.add(budget)
+    session.add(budget2)
+    session.commit()
+
+
 def test_read_recurrent_budgets_ok(client: TestClient, recurrent_budgets):
     response = client.get("/recurrent_budgets/")
     data = response.json()
@@ -124,14 +143,36 @@ def test_delete_recurrent_budget_other_user(
     assert response.status_code == 404
 
 
+def test_update_recurrent_budget_ok(
+        client: TestClient,
+        recurrent_budgets,
+        budgets,
+        session
+):
+    req_data = {
+        "description": "RE 1",
+        "val_budget": 1000
+    }
+    response = client.patch("/recurrent_budgets/2", json=req_data)
+    data = response.json()
+    assert response.status_code == 200
+    assert data['description'] == "RE 1"
+    assert data['val_budget'] == 1000
+    assert session.get(Budget, 2).description == "RE 1"
+    assert session.get(Budget, 2).val_budget == 1000
+
+
 def test_delete_recurrent_budget_success(
         client: TestClient,
-        recurrent_budgets
+        recurrent_budgets,
+        budgets,
+        session
 ):
     response = client.delete("/recurrent_budgets/2")
     assert response.status_code == 200
     response_2 = client.delete("/recurrent_budgets/2")
     assert response_2.status_code == 404
+    assert session.get(Budget, 2) is None
 
 
 def test_get_single_recurrent_budget_not_found(

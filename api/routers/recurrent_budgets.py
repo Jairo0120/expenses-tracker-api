@@ -85,11 +85,24 @@ async def update_recurrent_budget(
             status_code=404,
             detail="Recurrent budget not found"
         )
+    current_cycle = session.exec(
+        select(Cycle)
+        .where(Cycle.is_active)
+        .where(Cycle.user_id == current_user.id)
+    ).first()
+    current_budget = session.exec(
+        select(Budget)
+        .where(Budget.description == db_recurrent_budget.description)
+        .where(Budget.cycle_id == current_cycle.id)
+    ).first()
     recurrent_budget_data = recurrent_budget.model_dump(
         exclude_unset=True,
         exclude_none=True
     )
     db_recurrent_budget.sqlmodel_update(recurrent_budget_data)
+    if current_budget:
+        current_budget.sqlmodel_update(recurrent_budget_data)
+        session.add(current_budget)
     session.add(db_recurrent_budget)
     session.commit()
     session.refresh(db_recurrent_budget)
@@ -113,7 +126,18 @@ async def delete_recurrent_budget(
             status_code=404,
             detail="Recurrent budget not found"
         )
+    current_cycle = session.exec(
+        select(Cycle)
+        .where(Cycle.is_active)
+        .where(Cycle.user_id == current_user.id)
+    ).first()
+    current_budget = session.exec(
+        select(Budget)
+        .where(Budget.description == db_recurrent_budget.description)
+        .where(Budget.cycle_id == current_cycle.id)
+    ).first()
     session.delete(db_recurrent_budget)
+    session.delete(current_budget)
     session.commit()
     return {"ok": True}
 
