@@ -12,7 +12,7 @@ google-api-python-client = "^2.71.0"
 python-dotenv = "^0.21.1"
 pytest = "^7.4.1"
 beautifulsoup4 = "^4.12.2"
-fastapi = "0.*"
+fastapi = {version = "0.*", extras = ["standard"]}
 uvicorn = {version = "^0.27.1 ", extras = ["standard"]}
 sqlmodel = "0.0.*"
 python-multipart = "^0.0.9"
