@@ -328,3 +328,10 @@ class GroupedSavings(SQLModel):
     total_global: float
     total_last_month: float
     last_saving: datetime
+
+
+class CycleExpensesStatus(SQLModel):
+    total_recurrent_expenses: float
+    total_expenses: float
+    total_incomes: float
+    total_savings: float
