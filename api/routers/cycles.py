@@ -8,6 +8,7 @@ from api.models import (
     User,
     Cycle,
     CycleExpensesStatus,
+    CycleSimpleList,
 )
 from sqlmodel import Session, select, text
 from typing import Annotated
@@ -39,24 +40,24 @@ async def get_cycle_expenses_status(
     stmt = text(
         f"""
         SELECT 'total_recurrent_expenses' AS concept,
-            sum(e.val_expense) AS total
+            COALESCE(sum(e.val_expense), 0) AS total
         FROM expense e
         WHERE e.cycle_id = {cycle_db.id} AND
             e.is_recurrent_expense = 1
         UNION
         SELECT 'total_expenses',
-            sum(e.val_expense) AS total
+            COALESCE(sum(e.val_expense), 0) AS total
         FROM expense e
         WHERE e.cycle_id = {cycle_db.id} AND
             e.is_recurrent_expense = 0
         UNION
         SELECT 'total_incomes',
-            sum(i.val_income) AS total
+            COALESCE(sum(i.val_income), 0) AS total
         FROM income i
         WHERE i.cycle_id = {cycle_db.id}
         UNION
         SELECT 'total_savings',
-            sum(s.val_saving) AS total
+            COALESCE(sum(s.val_saving), 0) AS total
         FROM saving s
         WHERE s.cycle_id = {cycle_db.id}
         """
@@ -65,3 +66,16 @@ async def get_cycle_expenses_status(
     totals = dict(session.exec(stmt).all())
 
     return CycleExpensesStatus(**totals)
+
+
+@router.get("/list-cycles", response_model=list[CycleSimpleList])
+def read_cycles(
+    current_user: User = Depends(get_current_active_user),
+    session: Session = Depends(get_session),
+):
+    stmt = (
+        select(Cycle)
+        .where(Cycle.user_id == current_user.id)
+        .order_by(Cycle.start_date.desc())
+    )
+    return session.exec(stmt).all()

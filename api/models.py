@@ -335,3 +335,10 @@ class CycleExpensesStatus(SQLModel):
     total_expenses: float
     total_incomes: float
     total_savings: float
+
+
+class CycleSimpleList(SQLModel):
+    id: int
+    start_date: date
+    end_date: date
+    description: str
