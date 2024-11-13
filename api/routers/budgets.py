@@ -17,11 +17,18 @@ CommonsDep = Annotated[dict, Depends(common_parameters)]
 async def read_budgets(
     commons: CommonsDep,
     current_user: User = Depends(get_current_active_user),
+    cycle_id: int | None = None,
     session: Session = Depends(get_session),
 ):
+    cycle_stmt = select(Cycle).where(Cycle.user_id == current_user.id)
+    if cycle_id:
+        cycle_stmt = cycle_stmt.where(Cycle.id == cycle_id)
+    else:
+        cycle_stmt = cycle_stmt.where(Cycle.is_active == 1)
+    cycle_db = session.exec(cycle_stmt).first()
     stmt = (
         select(Budget)
-        .join(Cycle, Budget.cycle_id == Cycle.id)
+        .join(Cycle, Budget.cycle_id == cycle_db.id)
         .where(Cycle.user_id == current_user.id)
         .where(Cycle.is_active == 1)
         .offset(commons["skip"])
