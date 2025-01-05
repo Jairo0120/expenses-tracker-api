@@ -12,7 +12,7 @@ import pytest
 @pytest.fixture(name='active_cycle')
 def active_cycle_fixture(session: Session, users):
     active_cycle = Cycle(
-        description=datetime.now().strftime('%B, %Y'),
+        description="January, 2024",
         start_date=datetime(2024, 1, 1),
         end_date=datetime(2024, 1, 31),
         user_id=1
@@ -169,6 +169,13 @@ def test_create_cycles_already_active_cycle(
     tasks.create_cycles(session)
     new_cycles = session.exec(select(Cycle)).all()
     assert len(new_cycles) == 2
+
+
+@freeze_time("2024-01-31 06:00:00")
+def test_create_cycles_end_date(session: Session, users, active_cycle):
+    tasks.create_cycles(session)
+    cycles = session.exec(select(Cycle).where(Cycle.user_id == 1)).all()
+    assert len(cycles) == 1
 
 
 def test_create_recurrent_incomes_active_cycle(

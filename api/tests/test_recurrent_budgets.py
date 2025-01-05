@@ -122,7 +122,8 @@ def test_update_recurrent_budget_other_user(
 
 def test_update_recurrent_budget_other_empty_values(
         client: TestClient,
-        recurrent_budgets
+        recurrent_budgets,
+        cycles
 ):
     req_data = {
         "description": None,

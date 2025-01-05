@@ -40,7 +40,7 @@ def create_cycles(session: Session, user_id: int = 0):
         current_cycle = session.exec(
             select(Cycle)
             .where(Cycle.user_id == user.id)
-            .where(Cycle.end_date >= datetime.now())
+            .where(Cycle.end_date >= datetime.now().strftime('%Y-%m-%d'))
         ).first()
         if current_cycle:
             continue
