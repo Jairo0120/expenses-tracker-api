@@ -77,6 +77,55 @@ def test_read_expenses(client: TestClient, expenses):
     assert len(response.json()) == 2
 
 
+def test_read_expenses_with_cycle_id(client: TestClient, expenses):
+    response = client.get("/expenses/?cycle_id=2")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 1
+    assert data[0]["id"] == 3
+    assert data[0]["cycle"]["id"] == 2
+
+
+def test_read_expenses_with_budget_id(client: TestClient, expenses, budgets):
+    response = client.get("/expenses/?budget_id=1")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 1
+    assert data[0]["id"] == 2
+    assert data[0]["budget"]["id"] == 1
+
+
+def test_read_expenses_with_budget_id_zero_unbudgeted(
+    client: TestClient, expenses
+):
+    response = client.get("/expenses/?budget_id=0")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 1
+    assert data[0]["id"] == 1
+    assert data[0]["budget"] is None
+
+
+def test_read_expenses_cycle_not_found(client: TestClient, expenses):
+    response = client.get("/expenses/?cycle_id=999")
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Cycle not found"
+
+
+def test_read_expenses_budget_not_found(client: TestClient, expenses, budgets):
+    response = client.get("/expenses/?budget_id=999")
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Budget not found"
+
+
+def test_read_expenses_budget_not_in_cycle(
+    client: TestClient, expenses, budgets
+):
+    response = client.get("/expenses/?cycle_id=2&budget_id=1")
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Budget not found"
+
+
 def test_create_expense(
     client: TestClient, session, expenses, cycles, budgets
 ):
@@ -273,3 +322,11 @@ def test_delete_expense(client: TestClient, expenses):
     assert response.status_code == 200
     response_2 = client.delete("/expenses/1")
     assert response_2.status_code == 404
+
+
+def test_read_expenses_with_budget(client: TestClient, expenses, budgets):
+    response = client.get("/expenses/?cycle_id=1&budget_id=1")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 1
+    assert data[0]["id"] == 2

@@ -16,6 +16,7 @@ from api.models import (
 )
 from sqlmodel import Session, select
 from typing import Annotated
+from asyncio import sleep
 import logging
 
 
@@ -28,6 +29,7 @@ CommonsDep = Annotated[dict, Depends(common_parameters)]
 async def read_expenses(
     commons: CommonsDep,
     cycle_id: int | None = None,
+    budget_id: int | None = None,
     current_user: User = Depends(get_current_active_user),
     session: Session = Depends(get_session),
 ):
@@ -42,13 +44,40 @@ async def read_expenses(
     if not cycle_db:
         raise HTTPException(status_code=404, detail="Cycle not found")
 
-    stmt = (
-        select(Expense)
-        .where(Expense.cycle_id == cycle_db.id)
-        .order_by(Expense.date_expense.desc())
-        .offset(commons["skip"])
-        .limit(commons["limit"])
-    )
+    if budget_id == 0:
+        stmt = (
+            select(Expense)
+            .where(Expense.cycle_id == cycle_db.id)
+            .where(Expense.budget_id.is_(None))
+            .order_by(Expense.date_expense.desc())
+            .offset(commons["skip"])
+            .limit(commons["limit"])
+        )
+    elif budget_id:
+        budget_stmt = (
+            select(Budget)
+            .where(Budget.cycle_id == cycle_db.id)
+            .where(Budget.id == budget_id)
+        )
+        budget_db = session.exec(budget_stmt).first()
+        if not budget_db:
+            raise HTTPException(status_code=404, detail="Budget not found")
+        stmt = (
+            select(Expense)
+            .where(Expense.cycle_id == cycle_db.id)
+            .where(Expense.budget_id == budget_db.id)
+            .order_by(Expense.date_expense.desc())
+            .offset(commons["skip"])
+            .limit(commons["limit"])
+        )
+    else:
+        stmt = (
+            select(Expense)
+            .where(Expense.cycle_id == cycle_db.id)
+            .order_by(Expense.date_expense.desc())
+            .offset(commons["skip"])
+            .limit(commons["limit"])
+        )
     return session.exec(stmt).all()
 
 

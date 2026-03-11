@@ -49,6 +49,8 @@ def test_read_budgets_ok(client: TestClient, budgets):
 
     assert response.status_code == 200
     assert len(data) == 2
+    assert "total_spent" in data[0]
+    assert data[0]["total_spent"] == 0
 
 
 def test_read_budgets_limit(client: TestClient, budgets):
@@ -57,3 +59,4 @@ def test_read_budgets_limit(client: TestClient, budgets):
 
     assert response.status_code == 200
     assert len(data) == 1
+    assert "total_spent" in data[0]

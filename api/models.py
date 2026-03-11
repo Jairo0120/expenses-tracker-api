@@ -190,6 +190,16 @@ class BudgetPublic(SQLModel):
     val_budget: float
 
 
+class BudgetWithTotal(SQLModel):
+    id: int
+    description: str
+    val_budget: float
+    cycle_id: int
+    created_at: datetime
+    updated_at: datetime
+    total_spent: float
+
+
 class RecurrentBudgetBase(SQLModel):
     description: str
     val_budget: float
@@ -327,7 +337,7 @@ class GroupedSavings(SQLModel):
     is_recurrent_saving: bool
     total_global: float
     total_last_month: float
-    last_saving: datetime
+    last_saving: datetime | None = None
 
 
 class CycleExpensesStatus(SQLModel):
