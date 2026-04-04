@@ -20,7 +20,7 @@ COPY ./api ${LAMBDA_TASK_ROOT}/api
 # directory instead of inside the api directory
 COPY ./.env.prod ${LAMBDA_TASK_ROOT}/.env
 
-COPY ./auth0-certificate.dev.pem ${LAMBDA_TASK_ROOT}/api
+COPY ./auth0-certificate.prod.pem ${LAMBDA_TASK_ROOT}/api
 
 WORKDIR ${LAMBDA_TASK_ROOT}
 
