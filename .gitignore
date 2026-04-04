@@ -162,4 +162,5 @@ cython_debug/
 #.idea/
 
 # Private files
-auth0-certificate.pem
+auth0-certificate.dev.pem
+auth0-certificate.prod.pem
