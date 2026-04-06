@@ -16,7 +16,6 @@ from api.models import (
 )
 from sqlmodel import Session, select
 from typing import Annotated
-from asyncio import sleep
 import logging
 
 

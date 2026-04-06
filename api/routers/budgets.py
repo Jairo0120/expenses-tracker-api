@@ -6,7 +6,7 @@ from api.dependencies import (
 )
 from api.models import User, Budget, Cycle, Expense, BudgetWithTotal
 from sqlmodel import Session, select, col
-from sqlalchemy import func, and_
+from sqlalchemy import func, and_, desc
 from typing import Annotated
 
 
@@ -30,11 +30,12 @@ async def read_budgets(
     if not cycle_db:
         raise HTTPException(status_code=404, detail="Cycle not found")
 
-    total_spent = func.coalesce(func.sum(Expense.val_expense), 0).label(
-        "total_spent"
+    total_spent = func.coalesce(func.sum(Expense.val_expense), 0).label("total_spent")
+    total_expenses_records = func.coalesce(func.count(Expense.id), 0).label(
+        "total_expenses_records"
     )
     stmt = (
-        select(Budget, total_spent)
+        select(Budget, total_spent, total_expenses_records)
         .where(Budget.cycle_id == cycle_db.id)
         .outerjoin(
             Expense,
@@ -44,22 +45,49 @@ async def read_budgets(
             ),
         )
         .group_by(col(Budget.id))
+        .order_by(desc("total_expenses_records"))
         .offset(commons["skip"])
         .limit(commons["limit"])
     )
     rows = session.exec(stmt).all()
-    return [
-        BudgetWithTotal(
-            id=budget.id or 0,
-            description=budget.description,
-            val_budget=budget.val_budget,
-            cycle_id=budget.cycle_id,
-            created_at=budget.created_at,
-            updated_at=budget.updated_at,
-            total_spent=float(spent or 0),
+
+    unbudgeted_stmt = select(func.sum(Expense.val_expense)).where(
+        and_(
+            col(Expense.cycle_id) == cycle_db.id,
+            col(Expense.budget_id) == None,
         )
-        for budget, spent in rows
-    ]
+    )
+    unbudgeted_total = session.exec(unbudgeted_stmt).one()
+    result = []
+    if unbudgeted_total:
+        result.append(
+            BudgetWithTotal(
+                id=0,
+                description="Sin ppto.",
+                val_budget=0,
+                cycle_id=cycle_db.id,
+                created_at=cycle_db.created_at,
+                updated_at=cycle_db.updated_at,
+                total_spent=float(unbudgeted_total or 0),
+            )
+        )
+
+    result.extend(
+        [
+            BudgetWithTotal(
+                id=budget.id or 0,
+                description=budget.description,
+                val_budget=budget.val_budget,
+                cycle_id=budget.cycle_id,
+                created_at=budget.created_at,
+                updated_at=budget.updated_at,
+                total_spent=float(spent or 0),
+            )
+            for budget, spent, _ in rows
+        ]
+    )
+
+    return result
 
 
 @router.delete("/{budget_id}", status_code=200)
