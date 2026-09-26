@@ -3,10 +3,11 @@ from api.dependencies import (
     get_current_active_user, get_session, common_parameters
 )
 from api.models import (
+    select_live, soft_delete,
     User, RecurrentSaving, RecurrentSavingCreate, RecurrentSavingUpdate,
     SavingType, RecurrentSavingPublic
 )
-from sqlmodel import Session, select
+from sqlmodel import Session
 from typing import Annotated
 import logging
 
@@ -26,7 +27,7 @@ async def read_recurrent_savings(
     session: Session = Depends(get_session)
 ):
     stmt = (
-        select(RecurrentSaving)
+        select_live(RecurrentSaving)
         .where(RecurrentSaving.user_id == current_user.id)
         .offset(commons['skip'])
         .limit(commons['limit'])
@@ -43,7 +44,7 @@ async def create_recurrent_saving(
     recurrent_saving: RecurrentSavingCreate
 ):
     saving_type = session.exec(
-        select(SavingType)
+        select_live(SavingType)
         .where(SavingType.user_id == current_user.id)
         .where(
             SavingType.description == recurrent_saving.description.capitalize()
@@ -74,7 +75,7 @@ async def update_recurrent_saving(
     recurrent_saving: RecurrentSavingUpdate
 ):
     db_recurrent_saving = session.exec(
-        select(RecurrentSaving)
+        select_live(RecurrentSaving)
         .where(RecurrentSaving.id == recurrent_saving_id)
         .where(RecurrentSaving.user_id == current_user.id)
     ).first()
@@ -108,7 +109,7 @@ async def delete_recurrent_saving(
     recurrent_saving_id: int
 ):
     db_recurrent_saving = session.exec(
-        select(RecurrentSaving)
+        select_live(RecurrentSaving)
         .where(RecurrentSaving.id == recurrent_saving_id)
         .where(RecurrentSaving.user_id == current_user.id)
     ).first()
@@ -117,7 +118,7 @@ async def delete_recurrent_saving(
             status_code=404,
             detail="Recurrent saving not found"
         )
-    session.delete(db_recurrent_saving)
+    soft_delete(session, db_recurrent_saving)
     session.commit()
     return {"ok": True}
 
@@ -129,7 +130,7 @@ async def read_recurrent_saving(
     session: Session = Depends(get_session)
 ):
     db_recurrent_saving = session.exec(
-        select(RecurrentSaving)
+        select_live(RecurrentSaving)
         .where(RecurrentSaving.id == recurrent_saving_id)
         .where(RecurrentSaving.user_id == current_user.id)
     ).first()

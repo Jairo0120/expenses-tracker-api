@@ -1,9 +1,18 @@
-from sqlmodel import Field, SQLModel, AutoString, Relationship, Session
+from sqlmodel import Field, SQLModel, AutoString, Relationship, Session, select
 from sqlalchemy import UniqueConstraint, event, text
 from pydantic import EmailStr
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 from enum import Enum
 from uuid import uuid4
+
+
+def utcnow() -> datetime:
+    """
+    The current time as naive UTC, the way every datetime is stored. Lambda
+    runs in UTC, but the dev server doesn't, and syncing compares server and
+    client timestamps.
+    """
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 class SourceEnum(str, Enum):
@@ -28,11 +37,11 @@ class BaseModel(SQLModel):
         index=True,
         max_length=36,
     )
-    created_at: datetime = Field(default_factory=datetime.now, nullable=False)
+    created_at: datetime = Field(default_factory=utcnow, nullable=False)
     updated_at: datetime = Field(
-        default_factory=datetime.now,
+        default_factory=utcnow,
         nullable=False,
-        sa_column_kwargs={"onupdate": datetime.now},
+        sa_column_kwargs={"onupdate": utcnow},
     )
     # Soft-delete marker, so syncing clients learn about deletions.
     deleted_at: datetime | None = Field(default=None)
@@ -258,7 +267,7 @@ class RecurrentBudgetUpdate(SQLModel):
 class IncomeBase(SQLModel):
     description: str
     val_income: float
-    date_income: datetime = Field(default_factory=datetime.now, nullable=False)
+    date_income: datetime = Field(default_factory=utcnow, nullable=False)
 
 
 class Income(IncomeBase, BaseModel, table=True):
@@ -293,7 +302,7 @@ class ExpenseBase(SQLModel):
     description: str
     val_expense: float
     date_expense: datetime = Field(
-        default_factory=datetime.now, nullable=False
+        default_factory=utcnow, nullable=False
     )
     source: SourceEnum = SourceEnum.app
     categories: str = ""
@@ -344,7 +353,7 @@ class ExpenseUpdate(SQLModel):
 
 class SavingBase(SQLModel):
     val_saving: float
-    date_saving: datetime = Field(default_factory=datetime.now, nullable=False)
+    date_saving: datetime = Field(default_factory=utcnow, nullable=False)
     movement_type: SavingMovementEnum = SavingMovementEnum.income
     movement_description: str = ''
 
@@ -377,7 +386,7 @@ class SavingOutcomeCreate(SQLModel):
     saving: str
     val_outcome: float
     date_outcome: datetime = Field(
-        default_factory=datetime.now, nullable=False
+        default_factory=utcnow, nullable=False
     )
     description: str
     cycle_id: int | None = None
@@ -466,3 +475,50 @@ def assign_sync_versions(session, flush_context, instances):
     ).scalar_one()
     for offset, obj in enumerate(changed):
         obj.sync_version = last - len(changed) + 1 + offset
+
+
+def select_live(model):
+    """`select(model)` without soft-deleted records."""
+    return select(model).where(model.deleted_at.is_(None))
+
+
+def soft_delete(session: Session, record: BaseModel):
+    """
+    Mark a record deleted instead of removing it, so syncing clients learn
+    about the deletion. Expenses stop pointing at a deleted budget.
+    """
+    record.deleted_at = utcnow()
+    session.add(record)
+    if isinstance(record, Budget):
+        for expense in session.exec(
+            select(Expense).where(Expense.budget_id == record.id)
+        ).all():
+            expense.budget_id = None
+            session.add(expense)
+
+
+def refresh_active_cycle(session: Session, user_id: int, today: date):
+    """
+    Make the cycle containing `today` the user's only active one, if it
+    exists. Cycles can now also arrive from the apps (created offline).
+    """
+    current = session.exec(
+        select(Cycle)
+        .where(Cycle.user_id == user_id)
+        .where(Cycle.deleted_at.is_(None))
+        .where(Cycle.start_date <= today)
+        .where(Cycle.end_date >= today)
+    ).first()
+    if not current:
+        return
+    for cycle in session.exec(
+        select(Cycle)
+        .where(Cycle.user_id == user_id)
+        .where(Cycle.is_active == 1)
+        .where(Cycle.id != current.id)
+    ).all():
+        cycle.is_active = False
+        session.add(cycle)
+    if not current.is_active:
+        current.is_active = True
+        session.add(current)

@@ -173,7 +173,9 @@ def test_delete_recurrent_budget_success(
     assert response.status_code == 200
     response_2 = client.delete("/recurrent_budgets/2")
     assert response_2.status_code == 404
-    assert session.get(Budget, 2) is None
+    # Soft-deleted, so syncing apps learn about it.
+    session.expire_all()
+    assert session.get(Budget, 2).deleted_at is not None
 
 
 def test_get_single_recurrent_budget_not_found(

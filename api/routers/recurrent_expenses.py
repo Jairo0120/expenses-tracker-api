@@ -3,9 +3,10 @@ from api.dependencies import (
     get_current_active_user, get_session, common_parameters
 )
 from api.models import (
+    select_live, soft_delete,
     User, RecurrentExpense, RecurrentExpenseCreate, RecurrentExpenseUpdate
 )
-from sqlmodel import Session, select
+from sqlmodel import Session
 from typing import Annotated
 
 
@@ -23,7 +24,7 @@ async def read_recurrent_expenses(
     session: Session = Depends(get_session)
 ):
     stmt = (
-        select(RecurrentExpense)
+        select_live(RecurrentExpense)
         .where(RecurrentExpense.user_id == current_user.id)
         .offset(commons['skip'])
         .limit(commons['limit'])
@@ -58,7 +59,7 @@ async def update_recurrent_expense(
     recurrent_expense: RecurrentExpenseUpdate
 ):
     db_recurrent_expense = session.exec(
-        select(RecurrentExpense)
+        select_live(RecurrentExpense)
         .where(RecurrentExpense.id == recurrent_expense_id)
         .where(RecurrentExpense.user_id == current_user.id)
     ).first()
@@ -86,7 +87,7 @@ async def delete_recurrent_expense(
     recurrent_expense_id: int
 ):
     db_recurrent_expense = session.exec(
-        select(RecurrentExpense)
+        select_live(RecurrentExpense)
         .where(RecurrentExpense.id == recurrent_expense_id)
         .where(RecurrentExpense.user_id == current_user.id)
     ).first()
@@ -95,7 +96,7 @@ async def delete_recurrent_expense(
             status_code=404,
             detail="Recurrent expense not found"
         )
-    session.delete(db_recurrent_expense)
+    soft_delete(session, db_recurrent_expense)
     session.commit()
     return {"ok": True}
 
@@ -107,7 +108,7 @@ async def read_recurrent_expense(
     session: Session = Depends(get_session)
 ):
     db_recurrent_expense = session.exec(
-        select(RecurrentExpense)
+        select_live(RecurrentExpense)
         .where(RecurrentExpense.id == recurrent_expense_id)
         .where(RecurrentExpense.user_id == current_user.id)
     ).first()

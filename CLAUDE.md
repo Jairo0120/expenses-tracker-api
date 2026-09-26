@@ -62,6 +62,14 @@ https://claude.ai/code/artifact/e725ea4c-d2ad-4546-96eb-20acb2935e62
   or change the next value of the counter in `syncstate`, so ORM writes are versioned automatically — bulk
   `update()`/`delete()` statements bypass it, use ORM objects. Cycles are unique per (user, start_date);
   copies of recurrent entries carry `recurrent_*_id`, unique per cycle.
+- Deletes are soft: `soft_delete(session, record)` (a deleted budget is also cleared from its expenses), and
+  every query uses `select_live(Model)` or filters `deleted_at IS NULL` (raw SQL too). Timestamps are naive
+  UTC via `models.utcnow()`.
+- `GET /sync?since=&limit=&window_start=` / `POST /sync` (`api/sync.py`, protocol in its docstring): records
+  by uuid with uuid references; the `ENTITIES` table describes each synced model. Push statuses: applied,
+  stale (older than the server copy, or deleted — delete wins), merged (natural-key duplicate: same month,
+  saving-type name, or recurrent copy per cycle; client switches to the returned uuid), rejected.
+  `window_start` limits budgets/expenses/incomes to recent cycles; savings are never windowed.
 
 ## Recent history (see `git log`)
 

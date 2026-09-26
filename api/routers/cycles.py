@@ -5,12 +5,13 @@ from api.dependencies import (
     common_parameters,
 )
 from api.models import (
+    select_live,
     User,
     Cycle,
     CycleExpensesStatus,
     CycleSimpleList,
 )
-from sqlmodel import Session, select, text
+from sqlmodel import Session, text
 from typing import Annotated
 import logging
 
@@ -27,7 +28,7 @@ async def get_cycle_expenses_status(
     session: Session = Depends(get_session),
 ):
     logger.info(f"Reading cycle status for user {current_user.id}")
-    cycle_stmt = select(Cycle).where(Cycle.user_id == current_user.id)
+    cycle_stmt = select_live(Cycle).where(Cycle.user_id == current_user.id)
     if cycle_id:
         cycle_stmt = cycle_stmt.where(Cycle.id == cycle_id)
     else:
@@ -43,23 +44,23 @@ async def get_cycle_expenses_status(
             COALESCE(sum(e.val_expense), 0) AS total
         FROM expense e
         WHERE e.cycle_id = :cycle_id AND
-            e.is_recurrent_expense = 1
+            e.is_recurrent_expense = 1 AND e.deleted_at IS NULL
         UNION
         SELECT 'total_expenses',
             COALESCE(sum(e.val_expense), 0) AS total
         FROM expense e
         WHERE e.cycle_id = :cycle_id AND
-            e.is_recurrent_expense = 0
+            e.is_recurrent_expense = 0 AND e.deleted_at IS NULL
         UNION
         SELECT 'total_incomes',
             COALESCE(sum(i.val_income), 0) AS total
         FROM income i
-        WHERE i.cycle_id = :cycle_id
+        WHERE i.cycle_id = :cycle_id AND i.deleted_at IS NULL
         UNION
         SELECT 'total_savings',
             COALESCE(sum(s.val_saving), 0) AS total
         FROM saving s
-        WHERE s.cycle_id = :cycle_id
+        WHERE s.cycle_id = :cycle_id AND s.deleted_at IS NULL
         """
     ).bindparams(cycle_id=cycle_db.id)
 
@@ -74,7 +75,7 @@ def read_cycles(
     session: Session = Depends(get_session),
 ):
     stmt = (
-        select(Cycle)
+        select_live(Cycle)
         .where(Cycle.user_id == current_user.id)
         .order_by(Cycle.start_date.desc())
     )

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from api.dependencies import get_current_active_user, get_session
 from sqlmodel import Session, select
-from api.models import UserCreate, User, Cycle
+from api.models import UserCreate, User, Cycle, select_live
 from api.exceptions import IntegrityException
 from api.tasks import create_cycles
 from sqlalchemy.exc import IntegrityError
@@ -49,7 +49,7 @@ async def create_user(
     else:
         logger.info(f"User already exists: {existing_user}")
         existing_cycle = session.exec(
-            select(Cycle).where(Cycle.user_id == existing_user.id)
+            select_live(Cycle).where(Cycle.user_id == existing_user.id)
         ).all()
         if len(existing_cycle) == 0:
             logger.info(f"Creating cycles for existing user: {existing_user}")

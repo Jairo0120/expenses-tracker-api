@@ -5,6 +5,7 @@ from api.dependencies import (
     common_parameters,
 )
 from api.models import (
+    select_live, soft_delete,
     User,
     RecurrentIncome,
     Income,
@@ -12,7 +13,7 @@ from api.models import (
     IncomeCreate,
     IncomeUpdate,
 )
-from sqlmodel import Session, select
+from sqlmodel import Session
 from typing import Annotated
 import logging
 
@@ -30,7 +31,7 @@ async def read_incomes(
     session: Session = Depends(get_session),
 ):
     logger.info(f"Reading incomes for user {current_user.id}")
-    cycle_stmt = select(Cycle).where(Cycle.user_id == current_user.id)
+    cycle_stmt = select_live(Cycle).where(Cycle.user_id == current_user.id)
     if cycle_id:
         cycle_stmt = cycle_stmt.where(Cycle.id == cycle_id)
     else:
@@ -39,7 +40,7 @@ async def read_incomes(
     if not cycle_db:
         raise HTTPException(status_code=404, detail="Cycle not found")
     stmt = (
-        select(Income)
+        select_live(Income)
         .where(Income.cycle_id == cycle_db.id)
         .order_by(Income.created_at.desc())
         .offset(commons["skip"])
@@ -56,7 +57,7 @@ async def create_income(
     income: IncomeCreate,
 ):
     logger.info(f"Creating income: {income}")
-    cycle_stmt = select(Cycle).where(Cycle.user_id == current_user.id)
+    cycle_stmt = select_live(Cycle).where(Cycle.user_id == current_user.id)
     if income.cycle_id:
         cycle_stmt = cycle_stmt.where(Cycle.id == income.cycle_id)
     else:
@@ -104,13 +105,13 @@ async def update_income(
     session: Session = Depends(get_session),
 ):
     logger.info(f"Updating income: {income}")
-    stmt = select(Income).where(Income.id == income_id)
+    stmt = select_live(Income).where(Income.id == income_id)
     db_income = session.exec(stmt).first()
     if not db_income or db_income.cycle.user_id != current_user.id:
         raise HTTPException(status_code=404, detail="Income not found")
     if income.cycle_id:
         db_cycle = session.exec(
-            select(Cycle)
+            select_live(Cycle)
             .where(Cycle.user_id == current_user.id)
             .where(Cycle.id == income.cycle_id)
         ).first()
@@ -136,11 +137,11 @@ async def delete_income(
 ):
     logger.info(f"Deleting income {income_id}")
     db_income = session.exec(
-        select(Income).where(Income.id == income_id)
+        select_live(Income).where(Income.id == income_id)
     ).first()
     if not db_income or db_income.cycle.user_id != current_user.id:
         raise HTTPException(status_code=404, detail="Income not found")
 
-    session.delete(db_income)
+    soft_delete(session, db_income)
     session.commit()
     return {"detail": "Income deleted"}

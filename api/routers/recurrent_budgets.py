@@ -3,10 +3,11 @@ from api.dependencies import (
     get_current_active_user, get_session, common_parameters
 )
 from api.models import (
+    select_live, soft_delete,
     User, RecurrentBudget, RecurrentBudgetCreate, RecurrentBudgetUpdate,
     Budget, Cycle
 )
-from sqlmodel import Session, select
+from sqlmodel import Session
 from typing import Annotated
 import logging
 
@@ -28,13 +29,37 @@ async def read_recurrent_budgets(
     session: Session = Depends(get_session)
 ):
     stmt = (
-        select(RecurrentBudget)
+        select_live(RecurrentBudget)
         .where(RecurrentBudget.user_id == current_user.id)
         .offset(commons['skip'])
         .limit(commons['limit'])
         .order_by(RecurrentBudget.created_at.desc())
     )
     return session.exec(stmt).all()
+
+
+def find_current_budget(
+    session: Session,
+    recurrent_budget: RecurrentBudget,
+    current_cycle: Cycle | None,
+) -> Budget | None:
+    """
+    The active cycle's copy of a recurrent budget: by its link, or by
+    description for copies made before links existed.
+    """
+    if not current_cycle:
+        return None
+    return session.exec(
+        select_live(Budget)
+        .where(Budget.cycle_id == current_cycle.id)
+        .where(
+            (Budget.recurrent_budget_id == recurrent_budget.id)
+            | (
+                Budget.recurrent_budget_id.is_(None)
+                & (Budget.description == recurrent_budget.description)
+            )
+        )
+    ).first()
 
 
 @router.post("", response_model=RecurrentBudget, status_code=201)
@@ -51,15 +76,17 @@ async def create_recurrent_budget(
     )
     session.add(db_recurrent_budget)
     current_cycle = session.exec(
-        select(Cycle)
+        select_live(Cycle)
         .where(Cycle.is_active)
         .where(Cycle.user_id == current_user.id)
     ).first()
     if current_cycle:
+        session.flush()
         budget = Budget(
             description=db_recurrent_budget.description,
             val_budget=db_recurrent_budget.val_budget,
-            cycle=current_cycle
+            cycle=current_cycle,
+            recurrent_budget_id=db_recurrent_budget.id,
         )
         session.add(budget)
     session.commit()
@@ -76,7 +103,7 @@ async def update_recurrent_budget(
     recurrent_budget: RecurrentBudgetUpdate
 ):
     db_recurrent_budget = session.exec(
-        select(RecurrentBudget)
+        select_live(RecurrentBudget)
         .where(RecurrentBudget.id == recurrent_budget_id)
         .where(RecurrentBudget.user_id == current_user.id)
     ).first()
@@ -86,15 +113,13 @@ async def update_recurrent_budget(
             detail="Recurrent budget not found"
         )
     current_cycle = session.exec(
-        select(Cycle)
+        select_live(Cycle)
         .where(Cycle.is_active)
         .where(Cycle.user_id == current_user.id)
     ).first()
-    current_budget = session.exec(
-        select(Budget)
-        .where(Budget.description == db_recurrent_budget.description)
-        .where(Budget.cycle_id == current_cycle.id)
-    ).first()
+    current_budget = find_current_budget(
+        session, db_recurrent_budget, current_cycle
+    )
     recurrent_budget_data = recurrent_budget.model_dump(
         exclude_unset=True,
         exclude_none=True
@@ -117,7 +142,7 @@ async def delete_recurrent_budget(
     recurrent_budget_id: int
 ):
     db_recurrent_budget = session.exec(
-        select(RecurrentBudget)
+        select_live(RecurrentBudget)
         .where(RecurrentBudget.id == recurrent_budget_id)
         .where(RecurrentBudget.user_id == current_user.id)
     ).first()
@@ -127,17 +152,16 @@ async def delete_recurrent_budget(
             detail="Recurrent budget not found"
         )
     current_cycle = session.exec(
-        select(Cycle)
+        select_live(Cycle)
         .where(Cycle.is_active)
         .where(Cycle.user_id == current_user.id)
     ).first()
-    current_budget = session.exec(
-        select(Budget)
-        .where(Budget.description == db_recurrent_budget.description)
-        .where(Budget.cycle_id == current_cycle.id)
-    ).first()
-    session.delete(db_recurrent_budget)
-    session.delete(current_budget)
+    current_budget = find_current_budget(
+        session, db_recurrent_budget, current_cycle
+    )
+    soft_delete(session, db_recurrent_budget)
+    if current_budget:
+        soft_delete(session, current_budget)
     session.commit()
     return {"ok": True}
 
@@ -149,7 +173,7 @@ async def read_recurrent_budget(
     session: Session = Depends(get_session)
 ):
     db_recurrent_budget = session.exec(
-        select(RecurrentBudget)
+        select_live(RecurrentBudget)
         .where(RecurrentBudget.id == recurrent_budget_id)
         .where(RecurrentBudget.user_id == current_user.id)
     ).first()

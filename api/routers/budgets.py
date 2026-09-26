@@ -4,7 +4,15 @@ from api.dependencies import (
     get_session,
     common_parameters,
 )
-from api.models import User, Budget, Cycle, Expense, BudgetWithTotal
+from api.models import (
+    User,
+    Budget,
+    Cycle,
+    Expense,
+    BudgetWithTotal,
+    select_live,
+    soft_delete,
+)
 from sqlmodel import Session, select, col
 from sqlalchemy import func, and_, desc
 from typing import Annotated
@@ -21,7 +29,7 @@ async def read_budgets(
     cycle_id: int | None = None,
     session: Session = Depends(get_session),
 ):
-    cycle_stmt = select(Cycle).where(Cycle.user_id == current_user.id)
+    cycle_stmt = select_live(Cycle).where(Cycle.user_id == current_user.id)
     if cycle_id:
         cycle_stmt = cycle_stmt.where(Cycle.id == cycle_id)
     else:
@@ -30,18 +38,22 @@ async def read_budgets(
     if not cycle_db:
         raise HTTPException(status_code=404, detail="Cycle not found")
 
-    total_spent = func.coalesce(func.sum(Expense.val_expense), 0).label("total_spent")
+    total_spent = func.coalesce(func.sum(Expense.val_expense), 0).label(
+        "total_spent"
+    )
     total_expenses_records = func.coalesce(func.count(Expense.id), 0).label(
         "total_expenses_records"
     )
     stmt = (
         select(Budget, total_spent, total_expenses_records)
         .where(Budget.cycle_id == cycle_db.id)
+        .where(col(Budget.deleted_at).is_(None))
         .outerjoin(
             Expense,
             and_(
                 col(Expense.budget_id) == col(Budget.id),
                 col(Expense.cycle_id) == cycle_db.id,
+                col(Expense.deleted_at).is_(None),
             ),
         )
         .group_by(col(Budget.id))
@@ -54,7 +66,8 @@ async def read_budgets(
     unbudgeted_stmt = select(func.sum(Expense.val_expense)).where(
         and_(
             col(Expense.cycle_id) == cycle_db.id,
-            col(Expense.budget_id) == None,
+            col(Expense.budget_id).is_(None),
+            col(Expense.deleted_at).is_(None),
         )
     )
     unbudgeted_total = session.exec(unbudgeted_stmt).one()
@@ -97,11 +110,11 @@ async def delete_budget(
     session: Session = Depends(get_session),
 ):
     budget = session.get(Budget, budget_id)
-    if not budget:
+    if not budget or budget.deleted_at:
         raise HTTPException(status_code=404, detail="Budget not found")
     cycle = session.get(Cycle, budget.cycle_id)
     if not cycle or cycle.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Budget not found")
-    session.delete(budget)
+    soft_delete(session, budget)
     session.commit()
     return {"ok": True}

@@ -3,9 +3,10 @@ from api.dependencies import (
     get_current_active_user, get_session, common_parameters
 )
 from api.models import (
+    select_live, soft_delete,
     User, RecurrentIncome, RecurrentIncomeCreate, RecurrentIncomeUpdate
 )
-from sqlmodel import Session, select
+from sqlmodel import Session
 from typing import Annotated
 
 
@@ -23,7 +24,7 @@ async def read_recurrent_incomes(
     session: Session = Depends(get_session)
 ):
     stmt = (
-        select(RecurrentIncome)
+        select_live(RecurrentIncome)
         .where(RecurrentIncome.user_id == current_user.id)
         .offset(commons['skip'])
         .limit(commons['limit'])
@@ -58,7 +59,7 @@ async def update_recurrent_income(
     recurrent_income: RecurrentIncomeUpdate
 ):
     db_recurrent_income = session.exec(
-        select(RecurrentIncome)
+        select_live(RecurrentIncome)
         .where(RecurrentIncome.id == recurrent_income_id)
         .where(RecurrentIncome.user_id == current_user.id)
     ).first()
@@ -86,7 +87,7 @@ async def delete_recurrent_income(
     recurrent_income_id: int
 ):
     db_recurrent_income = session.exec(
-        select(RecurrentIncome)
+        select_live(RecurrentIncome)
         .where(RecurrentIncome.id == recurrent_income_id)
         .where(RecurrentIncome.user_id == current_user.id)
     ).first()
@@ -95,7 +96,7 @@ async def delete_recurrent_income(
             status_code=404,
             detail="Recurrent income not found"
         )
-    session.delete(db_recurrent_income)
+    soft_delete(session, db_recurrent_income)
     session.commit()
     return {"ok": True}
 
@@ -107,7 +108,7 @@ async def read_recurrent_income(
     session: Session = Depends(get_session)
 ):
     db_recurrent_income = session.exec(
-        select(RecurrentIncome)
+        select_live(RecurrentIncome)
         .where(RecurrentIncome.id == recurrent_income_id)
         .where(RecurrentIncome.user_id == current_user.id)
     ).first()

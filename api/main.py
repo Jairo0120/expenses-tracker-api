@@ -14,6 +14,7 @@ from api.routers import (
     incomes,
     savings,
     cycles,
+    sync,
 )
 from api.database import run_migrations
 from api.log_config import LogConfig
@@ -53,6 +54,7 @@ app.include_router(incomes.router)
 app.include_router(savings.router)
 app.include_router(sandbox.router)
 app.include_router(cycles.router)
+app.include_router(sync.router)
 
 handler = Mangum(app, lifespan="on")
 

@@ -5,6 +5,7 @@ from api.dependencies import (
     common_parameters,
 )
 from api.models import (
+    select_live, soft_delete,
     User,
     RecurrentSaving,
     Saving,
@@ -17,7 +18,7 @@ from api.models import (
     SavingMovementEnum,
     GroupedSavings,
 )
-from sqlmodel import Session, select, text
+from sqlmodel import Session, text
 from typing import Annotated
 import logging
 
@@ -35,7 +36,7 @@ async def read_savings(
     session: Session = Depends(get_session),
 ):
     logger.info(f"Reading savings for user {current_user.id}")
-    cycle_stmt = select(Cycle).where(Cycle.user_id == current_user.id)
+    cycle_stmt = select_live(Cycle).where(Cycle.user_id == current_user.id)
     if cycle_id:
         cycle_stmt = cycle_stmt.where(Cycle.id == cycle_id)
     else:
@@ -44,7 +45,7 @@ async def read_savings(
     if not cycle_db:
         raise HTTPException(status_code=404, detail="Cycle not found")
     stmt = (
-        select(Saving)
+        select_live(Saving)
         .where(Saving.cycle_id == cycle_db.id)
         .where(Saving.movement_type == SavingMovementEnum.income)
         .order_by(Saving.created_at.desc())
@@ -80,6 +81,9 @@ async def read_grouped_savings(
             join savingtype st on s.saving_type_id = st.id
             join cycle c on s.cycle_id = c.id
             where st.user_id = :user_id
+                and s.deleted_at is null
+                and st.deleted_at is null
+                and c.deleted_at is null
             group by st.description
             order by 6 desc"""
     ).bindparams(user_id=current_user.id)
@@ -94,7 +98,7 @@ async def create_saving(
     saving: SavingCreate,
 ):
     logger.info(f"Creating saving: {saving}")
-    cycle_stmt = select(Cycle).where(Cycle.user_id == current_user.id)
+    cycle_stmt = select_live(Cycle).where(Cycle.user_id == current_user.id)
     if saving.cycle_id:
         cycle_stmt = cycle_stmt.where(Cycle.id == saving.cycle_id)
     else:
@@ -107,7 +111,7 @@ async def create_saving(
 
     try:
         saving_type = session.exec(
-            select(SavingType)
+            select_live(SavingType)
             .where(SavingType.user_id == current_user.id)
             .where(SavingType.description == saving.description.capitalize())
         ).first()
@@ -119,7 +123,7 @@ async def create_saving(
         recurrent_saving = None
         if saving.create_recurrent_saving:
             existent_recurrent_saving = session.exec(
-                select(RecurrentSaving)
+                select_live(RecurrentSaving)
                 .where(RecurrentSaving.user_id == current_user.id)
                 .where(RecurrentSaving.saving_type_id == saving_type.id)
             ).first()
@@ -160,7 +164,7 @@ async def create_saving_outcome(
     saving_outcome: SavingOutcomeCreate,
 ):
     logger.info(f"Creating saving outcome: {saving_outcome}")
-    cycle_stmt = select(Cycle).where(Cycle.user_id == current_user.id)
+    cycle_stmt = select_live(Cycle).where(Cycle.user_id == current_user.id)
     if saving_outcome.cycle_id:
         cycle_stmt = cycle_stmt.where(Cycle.id == saving_outcome.cycle_id)
     else:
@@ -172,7 +176,7 @@ async def create_saving_outcome(
         raise HTTPException(status_code=404, detail="Cycle not found")
 
     saving_type = session.exec(
-        select(SavingType)
+        select_live(SavingType)
         .where(SavingType.user_id == current_user.id)
         .where(
             SavingType.description == saving_outcome.saving.capitalize()
@@ -211,11 +215,15 @@ async def update_saving(
 ):
     logger.info(f"Updating saving: {saving}")
     db_saving = session.get(Saving, saving_id)
-    if not db_saving or db_saving.cycle.user_id != current_user.id:
+    if (
+        not db_saving
+        or db_saving.deleted_at
+        or db_saving.cycle.user_id != current_user.id
+    ):
         raise HTTPException(status_code=404, detail="Saving not found")
     if saving.cycle_id:
         db_cycle = session.exec(
-            select(Cycle)
+            select_live(Cycle)
             .where(Cycle.user_id == current_user.id)
             .where(Cycle.id == saving.cycle_id)
         ).first()
@@ -246,11 +254,11 @@ async def delete_saving(
 ):
     logger.info(f"Deleting saving {saving_id}")
     db_saving = session.exec(
-        select(Saving).where(Saving.id == saving_id)
+        select_live(Saving).where(Saving.id == saving_id)
     ).first()
     if not db_saving or db_saving.cycle.user_id != current_user.id:
         raise HTTPException(status_code=404, detail="Saving not found")
 
-    session.delete(db_saving)
+    soft_delete(session, db_saving)
     session.commit()
     return {"detail": "Saving deleted"}

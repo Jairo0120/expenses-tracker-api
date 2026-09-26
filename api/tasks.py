@@ -1,7 +1,7 @@
 from api import config
 from api.models import (
     Cycle, User, RecurrentIncome, Income, RecurrentExpense, Expense,
-    SourceEnum, RecurrentSaving, Saving, Budget, RecurrentBudget
+    SourceEnum, RecurrentSaving, Saving, Budget, RecurrentBudget, utcnow
 )
 from sqlmodel import Session, create_engine, select
 from datetime import date, datetime
@@ -86,7 +86,7 @@ def create_recurrent_incomes(session: Session):
             income = Income(
                 description=re_income.description,
                 val_income=re_income.val_income,
-                date_income=datetime.now(),
+                date_income=utcnow(),
                 is_recurrent_income=True,
                 recurrent_income_id=re_income.id,
                 cycle_id=cycle.id or 0
@@ -117,7 +117,7 @@ def create_recurrent_expenses(session: Session):
             expense = Expense(
                 description=re_expense.description,
                 val_expense=re_expense.val_expense,
-                date_expense=datetime.now(),
+                date_expense=utcnow(),
                 is_recurrent_expense=True,
                 source=SourceEnum.recurrent,
                 categories=re_expense.categories,
@@ -149,7 +149,7 @@ def create_recurrent_savings(session: Session):
         for re_saving in session.exec(recurrent_savings_stmt):
             saving = Saving(
                 val_saving=re_saving.val_saving,
-                date_saving=datetime.now(),
+                date_saving=utcnow(),
                 is_recurrent_saving=True,
                 recurrent_saving_id=re_saving.id,
                 cycle_id=cycle.id or 0,

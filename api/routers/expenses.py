@@ -5,6 +5,7 @@ from api.dependencies import (
     common_parameters,
 )
 from api.models import (
+    select_live, soft_delete,
     User,
     Expense,
     Cycle,
@@ -14,7 +15,7 @@ from api.models import (
     ExpenseUpdate,
     RecurrentExpense,
 )
-from sqlmodel import Session, select
+from sqlmodel import Session
 from typing import Annotated
 import logging
 
@@ -33,7 +34,7 @@ async def read_expenses(
     session: Session = Depends(get_session),
 ):
     logger.info(f"Reading expenses for user {current_user.id}")
-    cycle_stmt = select(Cycle).where(Cycle.user_id == current_user.id)
+    cycle_stmt = select_live(Cycle).where(Cycle.user_id == current_user.id)
     if cycle_id:
         cycle_stmt = cycle_stmt.where(Cycle.id == cycle_id)
     else:
@@ -45,7 +46,7 @@ async def read_expenses(
 
     if budget_id == 0:
         stmt = (
-            select(Expense)
+            select_live(Expense)
             .where(Expense.cycle_id == cycle_db.id)
             .where(Expense.budget_id.is_(None))
             .order_by(Expense.date_expense.desc())
@@ -54,7 +55,7 @@ async def read_expenses(
         )
     elif budget_id:
         budget_stmt = (
-            select(Budget)
+            select_live(Budget)
             .where(Budget.cycle_id == cycle_db.id)
             .where(Budget.id == budget_id)
         )
@@ -62,7 +63,7 @@ async def read_expenses(
         if not budget_db:
             raise HTTPException(status_code=404, detail="Budget not found")
         stmt = (
-            select(Expense)
+            select_live(Expense)
             .where(Expense.cycle_id == cycle_db.id)
             .where(Expense.budget_id == budget_db.id)
             .order_by(Expense.date_expense.desc())
@@ -71,7 +72,7 @@ async def read_expenses(
         )
     else:
         stmt = (
-            select(Expense)
+            select_live(Expense)
             .where(Expense.cycle_id == cycle_db.id)
             .order_by(Expense.date_expense.desc())
             .offset(commons["skip"])
@@ -91,7 +92,7 @@ async def create_expense(
     # 0 is how the list filter names "no budget"; never store it as an id.
     if expense.budget_id == 0:
         expense.budget_id = None
-    cycle_stmt = select(Cycle).where(Cycle.user_id == current_user.id)
+    cycle_stmt = select_live(Cycle).where(Cycle.user_id == current_user.id)
     if expense.cycle_id:
         cycle_stmt = cycle_stmt.where(Cycle.id == expense.cycle_id)
     else:
@@ -104,7 +105,7 @@ async def create_expense(
 
     if expense.budget_id:
         budget_stmt = (
-            select(Budget)
+            select_live(Budget)
             .where(Budget.id == expense.budget_id)
             .where(Budget.cycle_id == cycle_db.id)
         )
@@ -152,14 +153,14 @@ def update_expense(
 ):
     logger.info(f"Updating expense {expense_id}: {expense}")
     db_expense = session.exec(
-        select(Expense).where(Expense.id == expense_id)
+        select_live(Expense).where(Expense.id == expense_id)
     ).first()
     if not db_expense or db_expense.cycle.user_id != current_user.id:
         raise HTTPException(status_code=404, detail="Expense not found")
 
     if expense.cycle_id:
         db_cycle = session.exec(
-            select(Cycle)
+            select_live(Cycle)
             .where(Cycle.user_id == current_user.id)
             .where(Cycle.id == expense.cycle_id)
         ).first()
@@ -171,7 +172,7 @@ def update_expense(
     )
     if expense.budget_id and not cycle_changes:
         budget_stmt = (
-            select(Budget)
+            select_live(Budget)
             .where(Budget.id == expense.budget_id)
             .where(Budget.cycle_id == db_expense.cycle_id)
         )
@@ -201,11 +202,11 @@ def delete_expense(
 ):
     logger.info(f"Deleting expense {expense_id}")
     db_expense = session.exec(
-        select(Expense).where(Expense.id == expense_id)
+        select_live(Expense).where(Expense.id == expense_id)
     ).first()
     if not db_expense or db_expense.cycle.user_id != current_user.id:
         raise HTTPException(status_code=404, detail="Expense not found")
 
-    session.delete(db_expense)
+    soft_delete(session, db_expense)
     session.commit()
     return {"detail": "Expense deleted"}
