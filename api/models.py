@@ -224,7 +224,7 @@ class RecurrentBudgetUpdate(SQLModel):
 class IncomeBase(SQLModel):
     description: str
     val_income: float
-    date_income: datetime = Field(default=datetime.now(), nullable=False)
+    date_income: datetime = Field(default_factory=datetime.now, nullable=False)
 
 
 class Income(IncomeBase, BaseModel, table=True):
@@ -248,7 +248,7 @@ class IncomeUpdate(SQLModel):
 class ExpenseBase(SQLModel):
     description: str
     val_expense: float
-    date_expense: datetime = Field(default=datetime.now(), nullable=False)
+    date_expense: datetime = Field(default_factory=datetime.now, nullable=False)
     source: SourceEnum = SourceEnum.app
     categories: str = ""
 
@@ -286,7 +286,7 @@ class ExpenseUpdate(SQLModel):
 
 class SavingBase(SQLModel):
     val_saving: float
-    date_saving: datetime = Field(default=datetime.now(), nullable=False)
+    date_saving: datetime = Field(default_factory=datetime.now, nullable=False)
     movement_type: SavingMovementEnum = SavingMovementEnum.income
     movement_description: str = ''
 
@@ -308,7 +308,7 @@ class SavingCreate(SavingBase):
 class SavingOutcomeCreate(SQLModel):
     saving: str
     val_outcome: float
-    date_outcome: datetime = Field(default=datetime.now(), nullable=False)
+    date_outcome: datetime = Field(default_factory=datetime.now, nullable=False)
     description: str
     cycle_id: int | None = None
 
