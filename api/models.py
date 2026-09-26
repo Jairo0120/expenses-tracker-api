@@ -1,7 +1,9 @@
-from sqlmodel import Field, SQLModel, AutoString, Relationship
+from sqlmodel import Field, SQLModel, AutoString, Relationship, Session
+from sqlalchemy import UniqueConstraint, event, text
 from pydantic import EmailStr
 from datetime import datetime, date
 from enum import Enum
+from uuid import uuid4
 
 
 class SourceEnum(str, Enum):
@@ -18,8 +20,25 @@ class SavingMovementEnum(str, Enum):
 
 class BaseModel(SQLModel):
     id: int | None = Field(default=None, primary_key=True)
+    # Stable id shared with the apps, which generate it for records created
+    # offline. The integer id stays the internal key.
+    uuid: str = Field(
+        default_factory=lambda: str(uuid4()),
+        unique=True,
+        index=True,
+        max_length=36,
+    )
     created_at: datetime = Field(default_factory=datetime.now, nullable=False)
-    updated_at: datetime = Field(default_factory=datetime.now, nullable=False)
+    updated_at: datetime = Field(
+        default_factory=datetime.now,
+        nullable=False,
+        sa_column_kwargs={"onupdate": datetime.now},
+    )
+    # Soft-delete marker, so syncing clients learn about deletions.
+    deleted_at: datetime | None = Field(default=None)
+    # Position in the global change sequence (see assign_sync_versions);
+    # clients pull whatever changed after the last version they saw.
+    sync_version: int = Field(default=0, index=True)
 
 
 class UserBase(BaseModel):
@@ -152,6 +171,11 @@ class Category(BaseModel, CategoryBase, table=True):
 
 
 class Cycle(BaseModel, table=True):
+    # One cycle per user and month, whoever creates it (server task or app).
+    __table_args__ = (
+        UniqueConstraint("user_id", "start_date", name="uq_cycle_user_month"),
+    )
+
     description: str
     start_date: date
     end_date: date
@@ -177,9 +201,19 @@ class CyclePublic(SQLModel):
 
 
 class Budget(BaseModel, table=True):
+    # A recurrent budget is copied into a cycle at most once.
+    __table_args__ = (
+        UniqueConstraint(
+            "cycle_id", "recurrent_budget_id", name="uq_budget_cycle_recurrent"
+        ),
+    )
+
     description: str
     val_budget: float
     cycle_id: int = Field(foreign_key='cycle.id')
+    recurrent_budget_id: int | None = Field(
+        default=None, foreign_key='recurrentbudget.id'
+    )
     cycle: Cycle = Relationship(back_populates="budgets")
     expenses: list["Expense"] = Relationship(back_populates="budget")
 
@@ -228,7 +262,17 @@ class IncomeBase(SQLModel):
 
 
 class Income(IncomeBase, BaseModel, table=True):
+    # A recurrent income is copied into a cycle at most once.
+    __table_args__ = (
+        UniqueConstraint(
+            "cycle_id", "recurrent_income_id", name="uq_income_cycle_recurrent"
+        ),
+    )
+
     is_recurrent_income: bool = False
+    recurrent_income_id: int | None = Field(
+        default=None, foreign_key='recurrentincome.id'
+    )
     cycle_id: int = Field(foreign_key='cycle.id')
     cycle: Cycle = Relationship(back_populates="incomes")
 
@@ -256,7 +300,19 @@ class ExpenseBase(SQLModel):
 
 
 class Expense(ExpenseBase, BaseModel, table=True):
+    # A recurrent expense is copied into a cycle at most once.
+    __table_args__ = (
+        UniqueConstraint(
+            "cycle_id",
+            "recurrent_expense_id",
+            name="uq_expense_cycle_recurrent",
+        ),
+    )
+
     is_recurrent_expense: bool = False
+    recurrent_expense_id: int | None = Field(
+        default=None, foreign_key='recurrentexpense.id'
+    )
     budget_id: int | None = Field(foreign_key='budget.id', nullable=True)
     budget: Budget | None = Relationship(back_populates="expenses")
     cycle_id: int = Field(foreign_key='cycle.id')
@@ -294,7 +350,17 @@ class SavingBase(SQLModel):
 
 
 class Saving(SavingBase, BaseModel, table=True):
+    # A recurrent saving is copied into a cycle at most once.
+    __table_args__ = (
+        UniqueConstraint(
+            "cycle_id", "recurrent_saving_id", name="uq_saving_cycle_recurrent"
+        ),
+    )
+
     is_recurrent_saving: bool = False
+    recurrent_saving_id: int | None = Field(
+        default=None, foreign_key='recurrentsaving.id'
+    )
     saving_type_id: int = Field(foreign_key='savingtype.id')
     saving_type: SavingType = Relationship(back_populates="savings")
     cycle_id: int = Field(foreign_key='cycle.id')
@@ -356,3 +422,47 @@ class CycleSimpleList(SQLModel):
     start_date: date
     end_date: date
     description: str
+
+
+class SyncState(SQLModel, table=True):
+    """Single row holding the last sync_version handed out."""
+
+    id: int = Field(default=1, primary_key=True)
+    last_version: int = 0
+
+
+@event.listens_for(Session, "before_flush")
+def assign_sync_versions(session, flush_context, instances):
+    """
+    Give every inserted or modified record the next versions of a global
+    counter. The counter is bumped inside the flush's transaction, and SQLite
+    serializes writers, so versions are committed in increasing order and a
+    client pulling "after version N" never misses a change.
+    """
+    changed = [obj for obj in session.new if isinstance(obj, BaseModel)]
+    changed += [
+        obj
+        for obj in session.dirty
+        if isinstance(obj, BaseModel) and session.is_modified(obj)
+    ]
+    if not changed:
+        return
+    connection = session.connection()
+    connection.execute(
+        text(
+            "INSERT INTO syncstate (id, last_version) VALUES (1, 0) "
+            "ON CONFLICT (id) DO NOTHING"
+        )
+    )
+    connection.execute(
+        text(
+            "UPDATE syncstate SET last_version = last_version + :count "
+            "WHERE id = 1"
+        ),
+        {"count": len(changed)},
+    )
+    last = connection.execute(
+        text("SELECT last_version FROM syncstate WHERE id = 1")
+    ).scalar_one()
+    for offset, obj in enumerate(changed):
+        obj.sync_version = last - len(changed) + 1 + offset

@@ -27,6 +27,14 @@ https://claude.ai/code/artifact/e725ea4c-d2ad-4546-96eb-20acb2935e62
   `expenses-tracker-tasks` (`api/tasks.py:lambda_handler`). Deploys are done by the user.
 - `api/tasks.py` rolls cycles over: creates new cycles and copies recurrent incomes, expenses, savings and
   budgets into them. Recurrent entries only affect future cycles.
+- Schema changes go through Alembic (`api/migrations/`, config in `alembic.ini`):
+  `poetry run alembic revision --autogenerate -m "…"` (review the result; SQLite uses batch mode), and
+  `poetry run alembic -x url=sqlite:///path/to/copy.db upgrade head` to try one on a copy.
+  `api.database.run_migrations()` runs at every start of both Lambdas and of the dev server, in a single
+  `BEGIN IMMEDIATE` transaction (Python's sqlite3 otherwise autocommits DDL and a failure would leave a
+  half-migrated DB). A DB with tables but no recorded revision is stamped as the baseline `0001` first.
+  Never use `SQLModel.metadata.create_all` against real databases. Back up the prod DB before deploying a
+  new migration.
 
 ## Layout
 
@@ -49,6 +57,11 @@ https://claude.ai/code/artifact/e725ea4c-d2ad-4546-96eb-20acb2935e62
 - Saving types are per user and matched by capitalized description. Editing a saving's (or recurrent
   saving's) description renames the whole type — intended behaviour.
 - Raw SQL (`text()`) must use bound parameters.
+- Sync support (for the offline-capable Android app; plan in its CLAUDE.md): every table has `uuid`,
+  `deleted_at` and `sync_version`. `models.assign_sync_versions` (a `before_flush` hook) gives every insert
+  or change the next value of the counter in `syncstate`, so ORM writes are versioned automatically — bulk
+  `update()`/`delete()` statements bypass it, use ORM objects. Cycles are unique per (user, start_date);
+  copies of recurrent entries carry `recurrent_*_id`, unique per cycle.
 
 ## Recent history (see `git log`)
 

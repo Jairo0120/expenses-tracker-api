@@ -15,7 +15,7 @@ from api.routers import (
     savings,
     cycles,
 )
-from api.database import create_db_and_tables
+from api.database import run_migrations
 from api.log_config import LogConfig
 from mangum import Mangum
 import uvicorn
@@ -29,8 +29,8 @@ logger = logging.getLogger("expenses-tracker")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Loading tables...")
-    create_db_and_tables()
+    logger.info("Running database migrations...")
+    run_migrations()
     yield
     logger.info("Shuting down...")
 

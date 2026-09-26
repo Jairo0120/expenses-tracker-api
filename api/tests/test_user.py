@@ -39,7 +39,10 @@ def test_active_user_allow_access():
         override_get_current_user_active
     response = client.get('/users/me')
     assert response.status_code == 200
-    assert response.json() == {
+    data = response.json()
+    # The generated sync uuid is random; check it's there, then the rest.
+    assert len(data.pop("uuid")) == 36
+    assert data == {
         "id": 1,
         "email": "test@test.com",
         "name": "Test",
@@ -48,7 +51,9 @@ def test_active_user_allow_access():
         "start_cycle_day": 1,
         "end_cycle_day": 31,
         "created_at": "2024-01-01T00:00:00",
-        "updated_at": "2024-01-01T00:00:00"
+        "updated_at": "2024-01-01T00:00:00",
+        "deleted_at": None,
+        "sync_version": 0,
     }
     app.dependency_overrides = {}
 

@@ -178,6 +178,9 @@ def test_create_recurrent_expense(
     assert recurrent_expenses is not None
     assert recurrent_expenses.description == "Expense 4"
     assert recurrent_expenses.val_expense == 400
+    # The expense is the new recurrent expense's copy for this cycle.
+    stored = session.get(Expense, data["id"])
+    assert stored.recurrent_expense_id == recurrent_expenses.id
 
 
 def test_create_expense_cycle_not_found(client: TestClient, expenses, budgets):

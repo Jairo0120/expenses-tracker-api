@@ -68,6 +68,7 @@ async def create_income(
         raise HTTPException(status_code=404, detail="Cycle not found")
 
     try:
+        recurrent_income_id = None
         if income.create_recurrent_income:
             recurrent_income = RecurrentIncome(
                 description=income.description,
@@ -75,11 +76,15 @@ async def create_income(
                 user_id=current_user.id or 0,
             )
             session.add(recurrent_income)
+            # This income is the recurrent one's copy for this cycle.
+            session.flush()
+            recurrent_income_id = recurrent_income.id
         db_income = Income.model_validate(
             income,
             update={
                 "cycle_id": cycle_db.id,
                 "is_recurrent_income": income.create_recurrent_income,
+                "recurrent_income_id": recurrent_income_id,
             },
         )
         session.add(db_income)

@@ -256,3 +256,25 @@ def test_create_recurrent_budgets_inactive_cycle(
     cycle = session.exec(select(Cycle)).one()
     assert len(budgets) == 0
     assert cycle.is_recurrent_budgets_created == 0
+
+
+@freeze_time("2024-02-01")
+def test_create_cycles_twice_keeps_one_cycle_per_month(
+    session: Session, users
+):
+    tasks.create_cycles(session)
+    tasks.create_cycles(session)
+    cycles = session.exec(select(Cycle).where(Cycle.user_id == 1)).all()
+    assert len(cycles) == 1
+    assert cycles[0].start_date.isoformat() == "2024-02-01"
+
+
+def test_recurrent_copies_link_to_their_source(
+    session: Session, active_cycle, recurrent_incomes
+):
+    tasks.create_recurrent_incomes(session)
+    incomes = session.exec(select(Income)).all()
+    sources = session.exec(select(RecurrentIncome)).all()
+    assert sorted(i.recurrent_income_id for i in incomes) == sorted(
+        r.id for r in sources
+    )

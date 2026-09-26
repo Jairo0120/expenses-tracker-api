@@ -112,6 +112,7 @@ async def create_expense(
             raise HTTPException(status_code=404, detail="Budget not found")
 
     try:
+        recurrent_expense_id = None
         if expense.create_recurrent_expense:
             recurrent_expense = RecurrentExpense(
                 description=expense.description,
@@ -119,12 +120,16 @@ async def create_expense(
                 user_id=current_user.id or 0,
             )
             session.add(recurrent_expense)
+            # This expense is the recurrent one's copy for this cycle.
+            session.flush()
+            recurrent_expense_id = recurrent_expense.id
         db_expense = Expense.model_validate(
             expense,
             update={
                 "user_id": current_user.id,
                 "cycle_id": cycle_db.id,
                 "is_recurrent_expense": expense.create_recurrent_expense,
+                "recurrent_expense_id": recurrent_expense_id,
             },
         )
         session.add(db_expense)

@@ -116,6 +116,7 @@ async def create_saving(
                 description=saving.description.capitalize(),
                 user_id=current_user.id or 0,
             )
+        recurrent_saving = None
         if saving.create_recurrent_saving:
             existent_recurrent_saving = session.exec(
                 select(RecurrentSaving)
@@ -129,12 +130,18 @@ async def create_saving(
                     saving_type=saving_type,
                 )
                 session.add(recurrent_saving)
+                session.flush()
         db_saving = Saving(
             val_saving=saving.val_saving,
             date_saving=saving.date_saving,
             cycle=cycle_db,
             is_recurrent_saving=saving.create_recurrent_saving,
             saving_type=saving_type,
+            # Linked only to a recurrent saving created here: an existing one
+            # may already have its copy in this cycle.
+            recurrent_saving_id=(
+                recurrent_saving.id if recurrent_saving else None
+            ),
         )
         session.add(db_saving)
         session.commit()

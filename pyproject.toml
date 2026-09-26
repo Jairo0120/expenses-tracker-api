@@ -26,6 +26,7 @@ mangum = "^0.17.0"
 pyjwt = {version = "^2.9.0", extras = ["crypto"]}
 cryptography = "^43.0.0"
 poetry = "^2.0.0"
+alembic = "^1.20"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.1"
