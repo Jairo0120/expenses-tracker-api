@@ -54,5 +54,6 @@ https://claude.ai/code/artifact/e725ea4c-d2ad-4546-96eb-20acb2935e62
 
 2026-09-25/26, while porting the Android app: movement-date defaults evaluated per record; saving-type
 lookups scoped to the user; 404s for unknown cycles; budget clearing/validation on expense updates;
-`budget_id` 0 handling; bound SQL parameters; JWT leeway and 401 for invalid tokens. Not yet deployed to prod
-as of 2026-09-26 unless the user says otherwise.
+`budget_id` 0 handling; bound SQL parameters; JWT leeway and 401 for invalid tokens. All deployed to prod on
+2026-09-26. `deploy-image.sh` builds with `--provenance=false --sbom=false`: Lambda rejects the attestation
+image index Docker's containerd image store produces by default.
