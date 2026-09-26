@@ -38,30 +38,30 @@ async def get_cycle_expenses_status(
         raise HTTPException(status_code=404, detail="Cycle not found")
 
     stmt = text(
-        f"""
+        """
         SELECT 'total_recurrent_expenses' AS concept,
             COALESCE(sum(e.val_expense), 0) AS total
         FROM expense e
-        WHERE e.cycle_id = {cycle_db.id} AND
+        WHERE e.cycle_id = :cycle_id AND
             e.is_recurrent_expense = 1
         UNION
         SELECT 'total_expenses',
             COALESCE(sum(e.val_expense), 0) AS total
         FROM expense e
-        WHERE e.cycle_id = {cycle_db.id} AND
+        WHERE e.cycle_id = :cycle_id AND
             e.is_recurrent_expense = 0
         UNION
         SELECT 'total_incomes',
             COALESCE(sum(i.val_income), 0) AS total
         FROM income i
-        WHERE i.cycle_id = {cycle_db.id}
+        WHERE i.cycle_id = :cycle_id
         UNION
         SELECT 'total_savings',
             COALESCE(sum(s.val_saving), 0) AS total
         FROM saving s
-        WHERE s.cycle_id = {cycle_db.id}
+        WHERE s.cycle_id = :cycle_id
         """
-    )
+    ).bindparams(cycle_id=cycle_db.id)
 
     totals = dict(session.exec(stmt).all())
 

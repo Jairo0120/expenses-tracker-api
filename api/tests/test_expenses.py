@@ -330,3 +330,52 @@ def test_read_expenses_with_budget(client: TestClient, expenses, budgets):
     data = response.json()
     assert len(data) == 1
     assert data[0]["id"] == 2
+
+
+def test_create_expense_budget_zero_means_no_budget(
+    client: TestClient, session: Session, expenses, cycles
+):
+    req_data = {"description": "Expense 4", "val_expense": 400, "budget_id": 0}
+    response = client.post("/expenses/", json=req_data)
+    assert response.status_code == 201
+    # The response hides it (no budget 0 exists), so check what was stored.
+    assert session.get(Expense, response.json()["id"]).budget_id is None
+
+
+def test_update_expense_null_budget_clears_it(
+    client: TestClient, expenses, budgets
+):
+    response = client.patch("/expenses/2", json={"budget_id": None})
+    assert response.status_code == 200
+    assert response.json()["budget"] is None
+
+
+def test_update_expense_budget_zero_clears_it(
+    client: TestClient, session: Session, expenses, budgets
+):
+    response = client.patch("/expenses/2", json={"budget_id": 0})
+    assert response.status_code == 200
+    assert session.get(Expense, 2).budget_id is None
+
+
+def test_update_expense_without_budget_keeps_it(
+    client: TestClient, expenses, budgets
+):
+    response = client.patch("/expenses/2", json={"val_expense": 250})
+    assert response.status_code == 200
+    assert response.json()["budget"]["id"] == 1
+
+
+def test_update_budget_without_cycle_must_be_in_expense_cycle(
+    client: TestClient, expenses, budgets
+):
+    # Budget 3 belongs to cycle 2; expense 1 is in cycle 1.
+    response = client.patch("/expenses/1", json={"budget_id": 3})
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Budget not found"
+
+
+def test_update_budget_without_cycle(client: TestClient, expenses, budgets):
+    response = client.patch("/expenses/1", json={"budget_id": 2})
+    assert response.status_code == 200
+    assert response.json()["budget"]["id"] == 2

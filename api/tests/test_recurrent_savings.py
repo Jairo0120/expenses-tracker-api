@@ -147,3 +147,16 @@ def test_get_single_recurrent_saving_ok(
     assert data["saving_type"]['description'] == "Saving 1"
     assert data['val_saving'] == 100
     assert data['user_id'] == 1
+
+
+def test_create_recurrent_saving_ignores_other_users_saving_type(
+    client: TestClient, recurrent_savings
+):
+    # "Saving 3" is a type owned by user 2.
+    response = client.post(
+        "/recurrent_savings/",
+        json={"description": "Saving 3", "val_saving": 100},
+    )
+    assert response.status_code == 201
+    assert response.json()["saving_type"]["description"] == "Saving 3"
+    assert response.json()["saving_type"]["id"] != 3

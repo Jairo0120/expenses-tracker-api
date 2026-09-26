@@ -248,7 +248,9 @@ class IncomeUpdate(SQLModel):
 class ExpenseBase(SQLModel):
     description: str
     val_expense: float
-    date_expense: datetime = Field(default_factory=datetime.now, nullable=False)
+    date_expense: datetime = Field(
+        default_factory=datetime.now, nullable=False
+    )
     source: SourceEnum = SourceEnum.app
     categories: str = ""
 
@@ -308,7 +310,9 @@ class SavingCreate(SavingBase):
 class SavingOutcomeCreate(SQLModel):
     saving: str
     val_outcome: float
-    date_outcome: datetime = Field(default_factory=datetime.now, nullable=False)
+    date_outcome: datetime = Field(
+        default_factory=datetime.now, nullable=False
+    )
     description: str
     cycle_id: int | None = None
 

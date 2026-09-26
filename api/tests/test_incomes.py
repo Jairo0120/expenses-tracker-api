@@ -159,3 +159,9 @@ def test_delete_income_other_user(client: TestClient, incomes):
     assert response.json()["detail"] == "Income not found"
     response = client.get("/incomes/")
     assert len(response.json()) == 2
+
+
+def test_list_incomes_cycle_not_found(client: TestClient, incomes):
+    response = client.get("/incomes/?cycle_id=999")
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Cycle not found"

@@ -36,6 +36,8 @@ async def read_incomes(
     else:
         cycle_stmt = cycle_stmt.where(Cycle.is_active == 1)
     cycle_db = session.exec(cycle_stmt).first()
+    if not cycle_db:
+        raise HTTPException(status_code=404, detail="Cycle not found")
     stmt = (
         select(Income)
         .where(Income.cycle_id == cycle_db.id)

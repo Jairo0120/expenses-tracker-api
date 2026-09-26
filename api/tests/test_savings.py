@@ -220,3 +220,53 @@ def test_delete_saving_other_user(client: TestClient, savings):
     assert response.json()["detail"] == "Saving not found"
     response = client.get("/savings/")
     assert len(response.json()) == 2
+
+
+def test_list_savings_cycle_not_found(client: TestClient, savings):
+    response = client.get("/savings/?cycle_id=999")
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Cycle not found"
+
+
+def test_create_saving_ignores_other_users_saving_type(
+    client: TestClient, cycles, saving_types
+):
+    # "Saving 3" is a type owned by user 2.
+    response = client.post(
+        "/savings/", json={"description": "Saving 3", "val_saving": 100}
+    )
+    assert response.status_code == 201
+    assert response.json()["saving_type"]["description"] == "Saving 3"
+    assert response.json()["saving_type"]["id"] != 3
+
+
+def test_create_saving_outcome(client: TestClient, cycles, saving_types):
+    response = client.post(
+        "/savings/saving-outcome",
+        json={"saving": "Saving 1", "val_outcome": 50, "description": "Car"},
+    )
+    assert response.status_code == 201
+    assert response.json()["saving_type"]["id"] == 1
+    assert response.json()["movement_type"] == "Outcome"
+
+
+def test_create_saving_outcome_other_users_saving_type(
+    client: TestClient, cycles, saving_types
+):
+    response = client.post(
+        "/savings/saving-outcome",
+        json={"saving": "Saving 3", "val_outcome": 50, "description": "Car"},
+    )
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Saving not found"
+
+
+def test_grouped_savings(client: TestClient, savings):
+    response = client.get("/savings/grouped-savings")
+    assert response.status_code == 200
+    totals = {
+        row["id"]: (row["total_global"], row["total_last_month"])
+        for row in response.json()
+    }
+    # Only user 1's types; cycle 1 is the active one.
+    assert totals == {1: (300, 300), 2: (300, 0)}

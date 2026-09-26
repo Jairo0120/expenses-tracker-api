@@ -88,6 +88,9 @@ async def create_expense(
     expense: ExpenseCreate,
 ):
     logger.info(f"Creating expense: {expense}")
+    # 0 is how the list filter names "no budget"; never store it as an id.
+    if expense.budget_id == 0:
+        expense.budget_id = None
     cycle_stmt = select(Cycle).where(Cycle.user_id == current_user.id)
     if expense.cycle_id:
         cycle_stmt = cycle_stmt.where(Cycle.id == expense.cycle_id)
@@ -158,11 +161,10 @@ def update_expense(
         if not db_cycle:
             raise HTTPException(status_code=404, detail="Cycle not found")
 
-    if (
-        expense.budget_id
-        and expense.cycle_id
-        and expense.cycle_id == db_expense.cycle_id
-    ):
+    cycle_changes = bool(
+        expense.cycle_id and expense.cycle_id != db_expense.cycle_id
+    )
+    if expense.budget_id and not cycle_changes:
         budget_stmt = (
             select(Budget)
             .where(Budget.id == expense.budget_id)
@@ -171,9 +173,12 @@ def update_expense(
         if not session.exec(budget_stmt).first():
             raise HTTPException(status_code=404, detail="Budget not found")
     expense_data = expense.model_dump(exclude_unset=True, exclude_none=True)
+    # An explicit null (or 0, the "no budget" filter value) clears the budget.
+    if "budget_id" in expense.model_fields_set and not expense.budget_id:
+        expense_data["budget_id"] = None
     # If the cycle has been updated, we need to remove the budget as this
     # could lead to data inconsistency
-    if expense.cycle_id and expense.cycle_id != db_expense.cycle_id:
+    if cycle_changes:
         expense_data["budget_id"] = None
     db_expense.sqlmodel_update(expense_data)
     session.add(db_expense)

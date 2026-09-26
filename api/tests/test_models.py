@@ -1,5 +1,10 @@
 from datetime import datetime
-from ..models import ExpenseCreate, IncomeCreate, SavingCreate, SavingOutcomeCreate
+from ..models import (
+    ExpenseCreate,
+    IncomeCreate,
+    SavingCreate,
+    SavingOutcomeCreate,
+)
 
 
 def test_movement_dates_default_to_creation_time():

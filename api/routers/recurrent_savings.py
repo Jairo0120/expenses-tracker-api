@@ -43,7 +43,9 @@ async def create_recurrent_saving(
     recurrent_saving: RecurrentSavingCreate
 ):
     saving_type = session.exec(
-        select(SavingType).where(
+        select(SavingType)
+        .where(SavingType.user_id == current_user.id)
+        .where(
             SavingType.description == recurrent_saving.description.capitalize()
         )
     ).first()

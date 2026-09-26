@@ -41,6 +41,8 @@ async def read_savings(
     else:
         cycle_stmt = cycle_stmt.where(Cycle.is_active == 1)
     cycle_db = session.exec(cycle_stmt).first()
+    if not cycle_db:
+        raise HTTPException(status_code=404, detail="Cycle not found")
     stmt = (
         select(Saving)
         .where(Saving.cycle_id == cycle_db.id)
@@ -59,7 +61,7 @@ async def read_grouped_savings(
 ):
     logger.info(f"Reading grouped savings for user {current_user.id}")
     stmt = text(
-        f"""select st.id,
+        """select st.id,
                 st.description,
                 max(s.is_recurrent_saving) as is_recurrent_saving,
                 sum(case s.movement_type
@@ -77,10 +79,10 @@ async def read_grouped_savings(
             from saving s
             join savingtype st on s.saving_type_id = st.id
             join cycle c on s.cycle_id = c.id
-            where st.user_id = {str(current_user.id)}
+            where st.user_id = :user_id
             group by st.description
             order by 6 desc"""
-    )
+    ).bindparams(user_id=current_user.id)
     return session.exec(stmt).all()
 
 
@@ -105,9 +107,9 @@ async def create_saving(
 
     try:
         saving_type = session.exec(
-            select(SavingType).where(
-                SavingType.description == saving.description.capitalize()
-            )
+            select(SavingType)
+            .where(SavingType.user_id == current_user.id)
+            .where(SavingType.description == saving.description.capitalize())
         ).first()
         if not saving_type:
             saving_type = SavingType(
@@ -163,7 +165,9 @@ async def create_saving_outcome(
         raise HTTPException(status_code=404, detail="Cycle not found")
 
     saving_type = session.exec(
-        select(SavingType).where(
+        select(SavingType)
+        .where(SavingType.user_id == current_user.id)
+        .where(
             SavingType.description == saving_outcome.saving.capitalize()
         )
     ).first()
