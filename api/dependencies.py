@@ -13,6 +13,11 @@ oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl="token",
 )
 
+# Auth0 stamps iat in whole seconds and the apps call the API right after
+# login, so a clock a fraction of a second behind Auth0's would reject fresh
+# tokens as "not yet valid" without some leeway.
+TOKEN_LEEWAY_SECONDS = 10
+
 
 @lru_cache
 def get_settings():
@@ -44,7 +49,7 @@ async def get_current_user(
     )
     settings = get_settings()
     try:
-        # pyjwt takes care of the validation of the exp date of the token
+        # pyjwt validates the signature, audience, exp and iat of the token
         cert_obj = load_pem_x509_certificate(
             Path(settings.auth0_certificate_url).read_bytes()
         )
@@ -53,11 +58,14 @@ async def get_current_user(
             key=cert_obj.public_key(),
             algorithms=["RS256"],
             audience=settings.auth0_audience,
+            leeway=TOKEN_LEEWAY_SECONDS,
         )
         auth0_id = payload.get("sub")
         if auth0_id is None:
             raise credentials_exception
-    except jwt.ExpiredSignatureError:
+    except jwt.InvalidTokenError:
+        # Any invalid token (expired, not yet valid, wrong audience or
+        # signature, malformed) is a 401, not a server error.
         raise credentials_exception
     # Check if the user exists
     statement = select(User).where(User.auth0_id == auth0_id)
