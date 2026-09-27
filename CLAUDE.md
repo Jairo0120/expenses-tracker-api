@@ -24,7 +24,10 @@ https://claude.ai/code/artifact/e725ea4c-d2ad-4546-96eb-20acb2935e62
   `.env.example`): certificate path, audience list, SQLite path. The dev DB holds only test data.
 - Prod: AWS Lambda behind API Gateway (`/prod` root path, via Mangum). `deploy-image.sh` (untracked) runs the
   tests, builds `Dockerfile.prod`, pushes to ECR and updates two functions: `expenses-tracker` (the API) and
-  `expenses-tracker-tasks` (`api/tasks.py:lambda_handler`). Deploys are done by the user.
+  `expenses-tracker-tasks` (`api/tasks.py:lambda_handler`), then waits for both and invokes the tasks Lambda
+  so migrations run before users hit the new code. Deploys are done by the user. Lambda settings since
+  2026-09-27: API 60 s / 512 MB, tasks 120 s / 512 MB (the 3 s / 128 MB defaults timed out migration 0002 on
+  EFS). `.dockerignore` keeps database files out of the image — never leave a DB copy in `api/`.
 - `api/tasks.py` rolls cycles over: creates new cycles and copies recurrent incomes, expenses, savings and
   budgets into them. Recurrent entries only affect future cycles.
 - Schema changes go through Alembic (`api/migrations/`, config in `alembic.ini`):
