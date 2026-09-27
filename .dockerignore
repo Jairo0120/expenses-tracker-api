@@ -1,0 +1,8 @@
+# Never bake data or local caches into the Lambda image (Dockerfile.prod copies the whole api/ folder).
+**/*.db
+**/*.db-journal
+**/*.db-wal
+**/*.db-shm
+**/*.sqlite*
+**/__pycache__
+**/.pytest_cache
