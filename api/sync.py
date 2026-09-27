@@ -14,7 +14,9 @@ Push: a list of changes applied in order, each one resolved as
   same month, a saving type with the same name, a recurrent entry's copy for
   the same cycle); the client should switch to the returned record's uuid;
 - `rejected`: invalid (unknown entity or reference, missing fields, ...).
-The server's copy of the record comes back with every result that has one.
+The server's copy of the record comes back with every result that has one,
+rejections included, so a client can restore it (no copy means the server
+doesn't have the record).
 """
 from dataclasses import dataclass, field
 from datetime import date, datetime, timezone
@@ -373,6 +375,37 @@ def pull(
     return {"cursor": cursor, "has_more": has_more, "changes": changes}
 
 
+def cycle_records(
+    session: Session, user_id: int, cycle_uuid: str
+) -> dict[str, Any] | None:
+    """
+    A cycle's windowed records (budgets, expenses, incomes), for clients that
+    only keep recent cycles and open an older one. None if the user has no such
+    cycle.
+    """
+    cycle = session.exec(
+        select(Cycle)
+        .where(Cycle.uuid == cycle_uuid)
+        .where(Cycle.user_id == user_id)
+    ).first()
+    if cycle is None:
+        return None
+    changes = {}
+    for entity in ENTITIES:
+        if not entity.windowed:
+            continue
+        model = entity.model
+        records = session.exec(
+            select(model)
+            .where(model.cycle_id == cycle.id)
+            .where(model.deleted_at.is_(None))
+            .order_by(model.sync_version)
+        ).all()
+        if records:
+            changes[entity.name] = serialize(session, records)
+    return {"changes": changes}
+
+
 class PushChange(Schema):
     entity: str
     uuid: UUID
@@ -416,7 +449,10 @@ class PushProcessor:
                 status, record = self.apply(change, uuid)
                 self.results.append((uuid, status, record, None))
             except Rejected as rejected:
-                self.results.append((uuid, "rejected", None, str(rejected)))
+                existing = self.existing(change, uuid)
+                self.results.append(
+                    (uuid, "rejected", existing, str(rejected))
+                )
             # Flush so later changes in the push see this one.
             self.session.flush()
         if self.created_cycles:
@@ -433,6 +469,18 @@ class PushProcessor:
             )
             for uuid, status, record, reason in self.results
         ]
+
+    def existing(self, change: PushChange, uuid: str) -> BaseModel | None:
+        """The server's copy of a rejected change's record, if any."""
+        entity = ENTITY_BY_NAME.get(change.entity)
+        if entity is None:
+            return None
+        record = self.session.exec(
+            select(entity.model).where(entity.model.uuid == uuid)
+        ).first()
+        if record is None or not self.owns(entity, record):
+            return None
+        return record
 
     def serialize(self, record: BaseModel | None):
         if record is None:

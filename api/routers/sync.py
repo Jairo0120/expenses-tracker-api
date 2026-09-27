@@ -1,6 +1,6 @@
 from datetime import date
 from typing import Any
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel as Schema
 from sqlmodel import Session
 from api.dependencies import get_current_active_user, get_session
@@ -17,6 +17,11 @@ class PullResponse(Schema):
     cursor: int
     has_more: bool
     # Entity name (e.g. "expenses") -> changed records, in dependency order.
+    changes: dict[str, list[dict[str, Any]]]
+
+
+class CycleRecordsResponse(Schema):
+    # Entity name -> the cycle's live records (budgets, expenses, incomes).
     changes: dict[str, list[dict[str, Any]]]
 
 
@@ -40,6 +45,19 @@ def pull_changes(
     return sync.pull(
         session, current_user.id or 0, since, limit, window_start
     )
+
+
+@router.get("/cycles/{cycle_uuid}", response_model=CycleRecordsResponse)
+def cycle_records(
+    cycle_uuid: str,
+    current_user: User = Depends(get_current_active_user),
+    session: Session = Depends(get_session),
+):
+    """For cycles older than a client's sync window."""
+    records = sync.cycle_records(session, current_user.id or 0, cycle_uuid)
+    if records is None:
+        raise HTTPException(status_code=404, detail="Cycle not found")
+    return records
 
 
 @router.post("", response_model=PushResponse)

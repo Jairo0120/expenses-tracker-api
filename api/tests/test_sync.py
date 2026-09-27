@@ -331,3 +331,32 @@ def test_deleted_records_disappear_from_the_rest_api(
     budgets = client.get(f"/budgets?cycle_id={cycle_id}").json()
     assert [b["total_spent"] for b in budgets] == [0]
     assert client.delete(f"/expenses/{lunch.id}").status_code == 404
+
+
+def test_rejected_changes_return_the_servers_copy(client: TestClient, data):
+    budget = data["budget"]
+    existing = push(client, change(
+        "budgets", {"cycle_uuid": "nope"}, uuid=budget.uuid,
+        updated_at=utcnow() + timedelta(seconds=1),
+    ))[0]
+    assert existing["status"] == "rejected"
+    assert existing["record"]["uuid"] == budget.uuid
+    assert existing["record"]["val_budget"] == 100
+
+    new = push(client, change("expenses", {"description": "No amount"}))[0]
+    assert new["status"] == "rejected"
+    assert new["record"] is None
+
+
+def test_cycle_records_for_an_old_cycle(client: TestClient, data):
+    old = data["old"]
+    response = client.get(f"/sync/cycles/{old.uuid}")
+    assert response.status_code == 200
+    changes = response.json()["changes"]
+    assert descriptions(changes, "expenses") == ["Old"]
+    # Savings aren't windowed: clients always have all of them.
+    assert "savings" not in changes
+
+    assert client.get(
+        f"/sync/cycles/{data['other_user'].uuid}"
+    ).status_code == 404
